@@ -1618,15 +1618,15 @@ class Fields(object):
             '1': 'On',
         },
         {
-            'name': 'AACF',
+            'name': 'AA OE Channel Feature (AACF)',
             'index': 128,
             'byte': 10,
             'bit': 7,
             'size': 1,
             'items': 2 ,
             'type': 'mask',
-            '0': 'Not available',
-            '1': 'Available',
+            '0': 'Available',
+            '1': 'Not Available',
         },
         #{
         #    'name': 'BT Pairing Timeout',
