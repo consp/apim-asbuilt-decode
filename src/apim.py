@@ -1,13 +1,17 @@
+import sys
+if sys.version_info[0] < 3:
+    raise Exception("Must be using Python 3")
+if sys.version_info[1] < 4:
+    raise Exception("Must be using Python 3.4 or up")
+
 # Specific imports
 from binascii import unhexlify, hexlify
 
 # local imports
 from asbuilt import AsBuilt
-from encoder import HmiData, print_bits_known_de07_08
-from statics import JumpTables
-
+from encoder import HmiData, print_bits_known_de07_08, ItemEncoder
+from statics import JumpTables, Fields
 # global imports
-import sys
 import argparse
 
 if __name__ == "__main__":
@@ -31,7 +35,7 @@ Option 134 and up (DE04-DE06, 7D0-05 to 7D0-07) are either lookup tables or offs
     abtfile = args.abtfile
     debug = args.debug
 
-    items = HmiData(args.hmifile)
+    #items = HmiData(args.hmifile)
 
     asbuilt1 = AsBuilt(abtfile[0]) if abtfile is not None else None
     asbuilt2 = AsBuilt(abtfile[1]) if len(abtfile) > 1 else None
@@ -39,7 +43,7 @@ Option 134 and up (DE04-DE06, 7D0-05 to 7D0-07) are either lookup tables or offs
 
         if not args.noprint:
             try:
-                print(items.format(asbuilt1, asbuilt2))
+                print(ItemEncoder().format_all(asbuilt1, asbuilt2))
             except Exception as e:
                 print(asbuilt1.filename, asbuilt1.blocks)
                 raise
@@ -49,9 +53,10 @@ Option 134 and up (DE04-DE06, 7D0-05 to 7D0-07) are either lookup tables or offs
         print(asbuilt1.filename, str(asbuilt1), sep="\n") if asbuilt1 is not None else ""
         print(asbuilt2.filename, str(asbuilt2), sep="\n") if asbuilt2 is not None else ""
 
+        print(items.output_stuff(asbuilt1))
+
 
     if args.export_hmidata:
         with open(args.export_hmidata, "wb") as f:
             f.write(items.data)
-
 

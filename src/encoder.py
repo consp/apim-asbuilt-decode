@@ -10,6 +10,58 @@ class HmiData(object):
         [0, 2], [2, 2], [4, 2], [6, 1, 1], [6, 1, 2], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 2], [14, 2], [16, 2], [18, 1], [19, 1], [20, 1], [21, 2]
     ]
 
+    def output_stuff(self, ab):
+        for x in range(1, 5):
+            print("    de%02X = [" % (x-1))
+            for item in self.items:
+                l =  self.bit(item['index'])//8
+                if l < ab.start_byte(x+1) and l >= ab.start_byte(x):
+                    print("        {")
+                    print("            'name': '%s'," % item['name'])
+                    print("            'index': %d," % (item['index'] + 1))
+                    print("            'byte': %d," % (self.byte(item['index']) - ab.start_byte(x)))
+                    print("            'bit': %d," % (self.bit(item['index']) % 8)) # reverse
+                    print("            'size': %d," % (item['items']))
+                    if item['items'] >= 255 or '255' in item:
+                        print("            'type': 'table',")
+                        try:
+                            print("            'table': '%s'," % (item['255']))
+                        except:
+                            print(item)
+                            raise
+                        continue
+                    print("            'items':", item['items'], ",")
+                    print("            'type': 'mask',")
+                    for z in range(0, item['items']):
+                        print("            '%d': '%s'," % (z, item['%d'%z]))
+                    print("        },")
+            print("    ]\n\n")
+
+        for x in range(5, 8):
+            print("    de%02X = [" % (x))
+            for item in self.high_items:
+                l = ab.start_byte(5) + self.index_locations_high[item['index']][0]
+                if l < ab.start_byte(x+1) and l >= ab.start_byte(x):
+                    print("        {")
+                    print("            'name': '%s'," % item['name'])
+                    print("            'index': %d," % (item['index'] + 135))
+                    print("            'byte': %d," % ((ab.start_byte(x) - ab.start_byte(5)) + self.index_locations_high[item['index']][0]))
+                    print("            'size': %d," % (2**(self.index_locations_high[item['index']][1]*8) - 1))
+                    if len(self.index_locations_high[item['index']]) == 2:
+                        print("            'bit': %d," % (0))
+                        print("            'type': 'mul',")
+                        print("            'min': %s," % (item['min']))
+                        print("            'max': %s," % (item['max']))
+                        print("            'offset': %s," % (item['offset']))
+                        print("            'multiplier': %s," % (item['multiplier']))
+                        print("            'unit': '%s'," % (item['255']))
+                    else:
+                        print("            'bit': %d," % (self.index_locations_high[item['index']][2]-1))
+                        for z in range(0, item['items']):
+                            print("            '%d': '%s'," % (z, item['%d'%z]))
+                        print("            'items':", item['items'], ",")
+                    print("        },")
+            print("    ]\n\n")
 
     def __init__(self, filename):
         """
@@ -111,7 +163,10 @@ class HmiData(object):
         self.high_items = high_items
 
     def bits(self, index):
-        return (self.items[index]['items'] - 1).bit_length()
+        if index < 135:
+            return (self.items[index]['items'] - 1).bit_length()
+        else:
+            return -1
 
     def bit(self, index):
         return sum([(x['items'] - 1).bit_length() for x in self.items[:index]])
@@ -320,14 +375,117 @@ class HmiData(object):
         return string
 
 
+class ItemEncoder(object):
+    items = []
+
+    def __init__(self):
+        self.items = [Fields.block(block) for block in range(1, 10)]
+
+    def format_all(self, ab1, ab2):
+        if ab2 is not None and len(ab1) < len(ab2):
+            ab3 = ab1
+            ab1 = ab2 
+            ab2 = ab3
+
+        string = ""
+        for block in range(1, len(ab1.blocks) + 1):
+            string = string + self.format(block, ab1, ab2)
+
+        return string
+
+    def format(self, block, ab1, ab2):
+        string = "Block %d (7D0-%02X or DE%02X)\n" % (block, block, block - 1)
+        if block in [1, 2, 3, 4, 6, 8, 9]:
+            string = string + "#   - bit - loc - %-96s  - Field      Location     Val&Msk  = Res\n" % ("Name")
+        else:
+            string = string + "Block contains multiplier/offset values:\n"
+
+        try:
+            for item in self.items[block-1]:
+                bitloc = ab1.start_bit(block) + ((item['byte']) * 8) + item['bit']
+                mask = (((2**item['size'])-1) << (7 - item['bit'])) if item['bit'] != 0 else ((2**item['size'])-1)
+                value1 = ab1.bit(bitloc, item['size'])
+                value2 = ab2.bit(bitloc, item['size']) if ab2 is not None else None
+                byte1 = ab1.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8))
+                byte2 = ab2.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8)) if ab2 is not None else None
+                if item['type'] == 'mul':
+                    # multiplier type
+                    value1 = (ab1.bit(bitloc, item['size']) * item['multiplier']) + item['offset']
+                    value2 = (ab2.bit(bitloc, item['size']) * item['multiplier']) + item['offset'] if ab2 is not None else None
+                    string = string + "%-3s - %-48s%-44s\t%s%s\t%-16s%-16s\tMin: %0.1f\tMax: %0.1f\n" %(
+                        item['index'],
+                        item['name'],
+                        ab1.mask_string(bitloc, bitloc + item['size']),
+                        "%04X" % byte1,
+                        " vs %04X" % byte2 if byte2 is not None else "",
+                        "%0.1f %s%s" % (value1, item['unit'] if item['unit'] is not 'unitless' else "", " (%0.1f cm)" % (value1 * 2.54) if item['unit'] == "In" else ""),
+                        " vs %0.1f %s%s" % (value2, item['unit'] if item['unit'] is not 'unitless' else "", " (%0.1f cm)" % (value2 * 2.54) if item['unit'] == "In" else "") if value2 is not None else "",
+                        item['min'],
+                        item['max']
+                    )
+                elif item['type'] == 'mask':
+                    # bitmask typebit = 7 - item['bit']
+                    string = string + "%-4s- %-3s - %-3s\t %-s: %s %s %s\n" % (
+                                item['index'],
+                                item['size'],
+                                bitloc,
+                                item['name'],
+                                "." * (98 - len(item['name'])),
+                                ab1.mask_string(bitloc, bitloc + item['size']),
+                                "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
+                            )
+                    # for now assume enable // disable if one bit or multi bit strategy
+                    for x in range(0, item['items']):
+                        string = string + "\t\t     %2s %2s %s:\t%s\n" % (
+                                ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
+                                "2>" if ab2 is not None and x == value2 else "",
+                                "%02X" % x,
+                                "" if '%d' % x not in item else item['%d' % x]
+                                )
+                elif item['type'] == 'ascii':
+                    letterstring = " %02X: %s %s" % (value1, chr(value1), "vs %02X: %s" % (value2, chr(value2)) if value2 is not None else "")
+                    string = string + "%-4s- %-3s - %-3s\t %-s: %s %s %s\n" % (
+                                item['index'],
+                                item['size'],
+                                bitloc,
+                                item['name'],
+                                letterstring + "." * (98 - len(item['name']) - len(letterstring)),
+                                ab1.mask_string(bitloc, bitloc + item['size']),
+                                "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
+                            )
+                elif item['type'] == 'table':
+                    string = string + "%-4s- %-3s - %-3s\t %-s: %s %s %s\n" % (
+                                item['index'],
+                                item['size'],
+                                bitloc,
+                                item['name'],
+                                "." * (98 - len(item['name'])),
+                                ab1.mask_string(bitloc, bitloc + item['size']),
+                                "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
+                            )
+                    # for now assume enable // disable if one bit or multi bit strategy
+                    table = JumpTables.table(item['table'])
+                    for x in range(0, len(table)):
+                        string = string + "\t\t     %2s %2s %s:\t%s\n" % (
+                                ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
+                                "2>" if ab2 is not None and x == value2 else "",
+                                "%02X" % x,
+                                "" if len(table) < x not in item else table[x]
+                                )
+                    # table type
+                    pass
+        except Exception as e:
+            print(item)
+            print(block)
+            raise e
+        return string + "\n"
 
 
 def print_bits_known_de07_08():
-    items = Fields()
     de7 = [0] * (10*8)
     de8 = [0] * (20*8)
 
-    for i in items.items_de07:
+    for i in Fields.de07:
         if i['size'] == 1:
             de7[(i['byte'] * 8) + 7 - i['bit']] = 1
         else:
@@ -345,7 +503,7 @@ def print_bits_known_de07_08():
     print("")
 
     print("Known bits in DE08 // 7D0-09-xx")
-    for i in items.items_de08:
+    for i in Fields.de08:
         if i['size'] == 1:
             loc = ((i['byte']) * 8) + 7 - i['bit']
             if de8[loc] == 1:

@@ -96,7 +96,7 @@ class AsBuilt(object):
         return int(bitdata[start:stop], 2)
 
     def start_byte(self, block):
-        return sum(self.fieldsizes[:block-1]) if len(self.blocks) >= block else -1
+        return sum(self.fieldsizes[:block-1]) if len(self.blocks) >= block else 0 if block <= 0 else -1
 
     def start_bit(self, block):
         return self.start_byte(block) * 8
@@ -117,17 +117,18 @@ class AsBuilt(object):
         string = ""
         cnt = 0
         fin = 40
-        string = string + "7D0-%02X-%02X "% (i, l)
+        string = string + "7D0-%02X-%02X"% (i, l)
         for n in range((start // 40) * 40, stop, 40):
             string = string + " -" if cnt > 0 else string
             y = start % 40
             z = stop % 40
-            if z > n and z < start % 40:
-                z = 39
-            if y > z:
+            if (stop > n and z < y and cnt == 0) or stop % 40 == 0:
+                z = 40
+            if y > z and cnt > 0:
                 y = 0
             if cnt > 0:
                 fin = z
+            #string = string + " %d %d %d " % (z, y, fin)
             for x in range(0, y - (y % 4), 4):
                 if x % 16 == 0:
                     string = string + " "
@@ -137,10 +138,10 @@ class AsBuilt(object):
                     string = string + " "
                 if x == z and z != fin:
                     string = string + "n"
-                    break
+                    continue
                 if x != fin:
                     string = string + "X"
-            for x in range(z + (4 - (z % 4)), fin, 4):
+            for x in range(max(z + (4 - (z % 4)), y), fin, 4):
                 if x % 16 == 0:
                     string = string + " "
                 string = string + "n"
@@ -151,7 +152,8 @@ class AsBuilt(object):
 
         return string
 
-
+    def __len__(self):
+        return len(bytes(self))
 
     def __bytes__(self):
         return b"".join(self.blocks)
