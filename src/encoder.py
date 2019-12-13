@@ -1,6 +1,8 @@
 from statics import JumpTables, Fields
 from asbuilt import AsBuilt
 
+DEBUG=False
+
 import struct
 class HmiData(object):
     data = None
@@ -302,7 +304,7 @@ class HmiData(object):
             'items': 0,
         },
         """
-        string = "#   -bits-loc  - %-96s   - Field      Location     Msk&Val = Res\n" % ("Name")
+        string = "#%s%-96s   - Field      Location     Msk&Val = Res\n" % ("   -bits-loc  - " if DEBUG else "", "Name")
         if ab1.start_byte(8) == -1 and ab2.start_byte(8) == -1 or ab1.start_byte(8) == -1:
             return string
         for item in Fields.de07:
@@ -312,7 +314,7 @@ class HmiData(object):
             value2 = ab2.bit(bitloc, item['size'].bit_length()) if ab2 is not None else None
             byte1 = ab1.byte(ab1.start_byte(8) + item['byte'])
             byte2 = ab2.byte(ab1.start_byte(8) + item['byte']) if ab2 is not None else None
-            string = string + "%d - %d  - %d\t %-s: %s %s // %s %s\n" % (
+            string = string + "%s%-s: %s %s // %s %s\n" % ("%d - %d  - %d\t " if DEBUG else "",
                         item['index'],
                         item['size'].bit_length(),
                         bitloc,
@@ -384,7 +386,7 @@ class ItemEncoder(object):
     def format_all(self, ab1, ab2):
         if ab2 is not None and len(ab1) < len(ab2):
             ab3 = ab1
-            ab1 = ab2 
+            ab1 = ab2
             ab2 = ab3
 
         string = ""
@@ -396,7 +398,7 @@ class ItemEncoder(object):
     def format(self, block, ab1, ab2):
         string = "Block %d (7D0-%02X or DE%02X)\n" % (block, block, block - 1)
         if block in [1, 2, 3, 4, 6, 8, 9]:
-            string = string + "#   - bit - loc - %-96s  - Field      Location     Val&Msk  = Res\n" % ("Name")
+            string = string + "#%s%-96s  - Field      Location     Val&Msk  = Res\n" % ("   - bit - loc - " if DEBUG else "", "Name")
         else:
             string = string + "Block contains multiplier/offset values:\n"
 
@@ -412,8 +414,8 @@ class ItemEncoder(object):
                     # multiplier type
                     value1 = (ab1.bit(bitloc, item['size']) * item['multiplier']) + item['offset']
                     value2 = (ab2.bit(bitloc, item['size']) * item['multiplier']) + item['offset'] if ab2 is not None else None
-                    string = string + "%-3s - %-48s%-44s\t%s%s\t%-16s%-16s\tMin: %0.1f\tMax: %0.1f\n" %(
-                        item['index'],
+                    string = string + "%s%-48s%-44s\t%s%s\t%-16s%-16s\tMin: %0.1f\tMax: %0.1f\n" %(
+                        "%-3s - " % item['index'] if DEBUG else "",
                         item['name'],
                         ab1.mask_string(bitloc, bitloc + item['size']),
                         "%04X" % byte1,
@@ -425,10 +427,8 @@ class ItemEncoder(object):
                     )
                 elif item['type'] == 'mask':
                     # bitmask typebit = 7 - item['bit']
-                    string = string + "%-4s- %-3s - %-3s\t %-s: %s %s %s\n" % (
-                                item['index'],
-                                item['size'],
-                                bitloc,
+                    string = string + "%s%-s: %s %s %s\n" % (
+                                "%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
                                 "." * (98 - len(item['name'])),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
@@ -436,7 +436,7 @@ class ItemEncoder(object):
                             )
                     # for now assume enable // disable if one bit or multi bit strategy
                     for x in range(0, item['items']):
-                        string = string + "\t\t     %2s %2s %s:\t%s\n" % (
+                        string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
                                 ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
                                 "2>" if ab2 is not None and x == value2 else "",
                                 "%02X" % x,
@@ -444,20 +444,14 @@ class ItemEncoder(object):
                                 )
                 elif item['type'] == 'ascii':
                     letterstring = " %02X: %s %s" % (value1, chr(value1), "vs %02X: %s" % (value2, chr(value2)) if value2 is not None else "")
-                    string = string + "%-4s- %-3s - %-3s\t %-s: %s %s %s\n" % (
-                                item['index'],
-                                item['size'],
-                                bitloc,
+                    string = string + "%s%-s: %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
                                 letterstring + "." * (98 - len(item['name']) - len(letterstring)),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
                                 "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                             )
                 elif item['type'] == 'table':
-                    string = string + "%-4s- %-3s - %-3s\t %-s: %s %s %s\n" % (
-                                item['index'],
-                                item['size'],
-                                bitloc,
+                    string = string + "%s%-s: %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
                                 "." * (98 - len(item['name'])),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
@@ -466,7 +460,7 @@ class ItemEncoder(object):
                     # for now assume enable // disable if one bit or multi bit strategy
                     table = JumpTables.table(item['table'])
                     for x in range(0, len(table)):
-                        string = string + "\t\t     %2s %2s %s:\t%s\n" % (
+                        string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
                                 ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
                                 "2>" if ab2 is not None and x == value2 else "",
                                 "%02X" % x,
