@@ -35,8 +35,6 @@ Option 134 and up (DE04-DE06, 7D0-05 to 7D0-07) are either lookup tables or offs
     abtfile = args.abtfile
     debug = args.debug
 
-    #items = HmiData(args.hmifile)
-
     asbuilt1 = AsBuilt(abtfile[0]) if abtfile is not None else None
     asbuilt2 = AsBuilt(abtfile[1]) if len(abtfile) > 1 else None
     if asbuilt1 is not None and len(abtfile) > 0 and not debug:
@@ -52,11 +50,4 @@ Option 134 and up (DE04-DE06, 7D0-05 to 7D0-07) are either lookup tables or offs
         print_bits_known_de07_08()
         print(asbuilt1.filename, str(asbuilt1), sep="\n") if asbuilt1 is not None else ""
         print(asbuilt2.filename, str(asbuilt2), sep="\n") if asbuilt2 is not None else ""
-
-        print(items.output_stuff(asbuilt1))
-
-
-    if args.export_hmidata:
-        with open(args.export_hmidata, "wb") as f:
-            f.write(items.data)
 

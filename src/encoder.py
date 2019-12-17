@@ -396,20 +396,31 @@ class ItemEncoder(object):
         return string
 
     def format(self, block, ab1, ab2):
+        if not ab1.hasblock(block) or (ab2 is not None and not ab2.hasblock(block)):
+            return "Block %d not present in %s\n" % (block, "%s and %s" % (ab1.filename, ab2.filename) if not ab1.hasblock(block) and ab2 is not None and not ab2.hasblock(block) else ab1.filename if not ab1.hasblock(block) else ab2.filename)
         string = "Block %d (7D0-%02X or DE%02X)\n" % (block, block, block - 1)
         if block in [1, 2, 3, 4, 6, 8, 9]:
-            string = string + "#%s%-96s  - Field      Location     Val&Msk  = Res\n" % ("   - bit - loc - " if DEBUG else "", "Name")
+            string = string + "#%s%-96s  - Field     Loc Byte     Loc bit  Val1 %s\n" % ("   - bit - loc - " if DEBUG else "", "Name", "Val2" if ab2 is not None else "")
         else:
             string = string + "Block contains multiplier/offset values:\n"
 
+        # Parking Assistance: ................................................................................ 7D0-04-02 nnXX nnnn nn 01 & FF = 01
+        # Front Track                                     7D0-05-01 XXXX nnnn nn 169B & FFFF = 169B     169B5.8 In (14.7    cm)                 Min: 0.0Max: 655.4
         try:
             for item in self.items[block-1]:
                 bitloc = ab1.start_bit(block) + ((item['byte']) * 8) + item['bit']
-                mask = (((2**item['size'])-1) << (7 - item['bit'])) if item['bit'] != 0 else ((2**item['size'])-1)
+                mask = ((2**item['size'])-1) << (((7 - item['bit']) - (item['size'] - 1)) % 8)
                 value1 = ab1.bit(bitloc, item['size'])
                 value2 = ab2.bit(bitloc, item['size']) if ab2 is not None else None
                 byte1 = ab1.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8))
                 byte2 = ab2.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8)) if ab2 is not None else None
+
+                if mask < 256:
+                    bitmask = "{:.>8b}".format(mask)
+                    bitmask = bitmask.replace("0", ".")
+                    bitmask = bitmask[:bitmask.find("1")] + ("{:0%db}" % bitmask.count("1")).format(value1) + bitmask[bitmask.find("1")+bitmask.count("1"):]
+                else:
+                    bitmask = "too big "
                 if item['type'] == 'mul':
                     # multiplier type
                     value1 = (ab1.bit(bitloc, item['size']) * item['multiplier']) + item['offset']
@@ -427,12 +438,14 @@ class ItemEncoder(object):
                     )
                 elif item['type'] == 'mask':
                     # bitmask typebit = 7 - item['bit']
-                    string = string + "%s%-s: %s %s %s\n" % (
+                    string = string + "%s%-s: %s %s %s %s\n" % (
                                 "%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
                                 "." * (98 - len(item['name'])),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
-                                "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
+                                bitmask,
+                                "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
+                                #"vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                             )
                     # for now assume enable // disable if one bit or multi bit strategy
                     for x in range(0, item['items']):
@@ -451,11 +464,13 @@ class ItemEncoder(object):
                                 "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                             )
                 elif item['type'] == 'table':
-                    string = string + "%s%-s: %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
+                    string = string + "%s%-s: %s %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
                                 "." * (98 - len(item['name'])),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
-                                "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
+                                bitmask,
+                                "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
+                                #"vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                             )
                     # for now assume enable // disable if one bit or multi bit strategy
                     table = JumpTables.table(item['table'])
@@ -481,10 +496,10 @@ def print_bits_known_de07_08():
 
     for i in Fields.de07:
         if i['size'] == 1:
-            de7[(i['byte'] * 8) + 7 - i['bit']] = 1
+            de7[(i['byte'] * 8) + i['bit']] = 1
         else:
-            x = (i['byte'] * 8) + 7 - i['bit']
-            de7 = de7[:x] + [1] * i['size'].bit_length() + de7[x+i['size'].bit_length():]
+            x = (i['byte'] * 8) + i['bit']
+            de7 = de7[:x] + [1] * i['size'] + de7[x+i['size']:]
     c = 0
     print("Known bits in DE07 // 7D0-08-xx")
     for x in de7:
@@ -499,15 +514,15 @@ def print_bits_known_de07_08():
     print("Known bits in DE08 // 7D0-09-xx")
     for i in Fields.de08:
         if i['size'] == 1:
-            loc = ((i['byte']) * 8) + 7 - i['bit']
+            loc = ((i['byte']) * 8) + i['bit']
             if de8[loc] == 1:
                 print("duplicate: ", i['index'])
             de8[loc] = 1
         else:
-            x = ((i['byte']) * 8) + 7 - i['bit']
+            x = ((i['byte']) * 8) + i['bit']
             if de8[x] == 1:
                 print("duplicate: %d", i['index'])
-            de8 = de8[:x - i['size'].bit_length() + 1] + [1] * i['size'].bit_length() + de8[x+1:]
+            de8 = de8[:x] + [1] * i['size'] + de8[x+i['size']:]
     c = 0
     for x in de8:
         if c % 8 == 0 and c > 0:
