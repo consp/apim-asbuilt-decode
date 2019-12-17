@@ -104,7 +104,10 @@ class AsBuilt(object):
     def block(self, block):
         return self.blocks[block]
 
-    def mask_string(self, start, stop):
+    def hasblock(self, block):
+        return block <= len(self.blocks)
+
+    def mask_string(self, start, stop, values=False):
         i = 1
         value = int.from_bytes(self.bytes(start, stop), byteorder="big")
         for f in self.fieldsizes:
@@ -148,7 +151,7 @@ class AsBuilt(object):
             l += 1
             cnt += 1
         mask = ((2**(stop - start)) - 1) << (7-((stop-1) % 8))
-        string = string + " %02X & %02X = %02X" % (value, mask, value & mask) if value is not None else string
+        string = string + " %02X & %02X = %02X" % (value, mask, value & mask) if values else string
 
         return string
 
