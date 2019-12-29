@@ -210,7 +210,7 @@ class QtApp(object):
         self.button_open = QPushButton("Open File ...")
         self.button_open.clicked.connect(self.open_file)
         self.button_exit = QPushButton("Exit")
-        self.button_exit.clicked.connect(exit)
+        self.button_exit.clicked.connect(sys.exit)
 
         self.main_layout.addWidget(self.button_open)
         self.main_layout.addWidget(self.button_exit)

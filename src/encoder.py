@@ -384,40 +384,27 @@ class HmiData(object):
 
 def combo_change(box, item, bitfieldblock, *args, **kwargs):
     value = box.currentIndex()
-    print("changed to %d" % (value))
-    print(args)
-    print(kwargs)
-    print(bitfieldblock.text())
     data = int(bitfieldblock.text(), 16)
     bitdata = '{0:08b}'.format(data)
     bitdata = bitdata[:item['bit']] + ("{0:0%db}" % (item['size'])).format(value) + bitdata[item['bit']+item['size']:]
     data = int(bitdata, 2)
-    print(bitdata)
-    print(data)
+
     bitfieldblock.setText("%02X" % (data))
     
 def value_change(box, item, bitfieldblock, *args, **kwargs):
     value = float(box.text())
-    print("changed to %d" % (value))
-    print(args)
-    print(kwargs)
-    print(bitfieldblock[0].text())
-    if len(bitfieldblock) > 1:
-        print(bitfieldblock[1].text())
+
         
     if value > item['max']:
         value = item['max']
     elif value < item['min']:
         value = item['min']
     v = ((value - item['offset']) / item['multiplier'])
-    print(v)
     box.setText("%.2f" % value)
     data = int(bitfieldblock[0].text(), 16) if len(bitfieldblock) == 1 else int(bitfieldblock[0].text() + bitfieldblock[1].text(), 16)
     bitdata = ('{0:0%db}' % (item['size'])).format(data)
     bitdata = bitdata[:item['bit']] + ("{0:0%db}" % (item['size'])).format(int(v)) + bitdata[item['bit']+item['size']:]
     data = int(bitdata, 2)
-    print(bitdata)
-    print(data)
     string = "%04X" % (data)
     if item['size'] > 8:
         bitfieldblock[0].setText(string[:2])
@@ -427,7 +414,9 @@ def value_change(box, item, bitfieldblock, *args, **kwargs):
     
     
 def ascii_change(box, item, bitfieldblock, *args, **kwargs):
-    pass
+    value = box.text()
+    #bitdata = bitdata[:item['bit']] + ("{0:0%db}" % (item['size'])).format(value) + bitdata[item['bit']+item['size']:]
+    bitfieldblock.setText("%02X" % (ord(value[0])))
     
 class ItemEncoder(object):
     items = []
