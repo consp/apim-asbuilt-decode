@@ -1,5 +1,11 @@
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGroupBox, QMessageBox, QComboBox, QScrollArea, QLineEdit, QSizePolicy, QFrame
+from PyQt5.QtGui import QDoubleValidator, QRegExpValidator
+from PyQt5.QtCore import QRegExp
+
+from functools import partial
 from statics import JumpTables, Fields
 from asbuilt import AsBuilt
+
 
 DEBUG=False
 
@@ -376,12 +382,120 @@ class HmiData(object):
         string = string + self.format_de08(ab1, ab2)
         return string
 
-
+def combo_change(box, item, bitfieldblock, *args, **kwargs):
+    value = box.currentIndex()
+    print("changed to %d" % (value))
+    print(args)
+    print(kwargs)
+    print(bitfieldblock.text())
+    data = int(bitfieldblock.text(), 16)
+    bitdata = '{0:08b}'.format(data)
+    bitdata = bitdata[:item['bit']] + ("{0:0%db}" % (item['size'])).format(value) + bitdata[item['bit']+item['size']:]
+    data = int(bitdata, 2)
+    print(bitdata)
+    print(data)
+    bitfieldblock.setText("%02X" % (data))
+    
+def value_change(box, item, bitfieldblock, *args, **kwargs):
+    value = float(box.text())
+    print("changed to %d" % (value))
+    print(args)
+    print(kwargs)
+    print(bitfieldblock[0].text())
+    if len(bitfieldblock) > 1:
+        print(bitfieldblock[1].text())
+        
+    if value > item['max']:
+        value = item['max']
+    elif value < item['min']:
+        value = item['min']
+    v = ((value - item['offset']) / item['multiplier'])
+    print(v)
+    box.setText("%.2f" % value)
+    data = int(bitfieldblock[0].text(), 16) if len(bitfieldblock) == 1 else int(bitfieldblock[0].text() + bitfieldblock[1].text(), 16)
+    bitdata = ('{0:0%db}' % (item['size'])).format(data)
+    bitdata = bitdata[:item['bit']] + ("{0:0%db}" % (item['size'])).format(int(v)) + bitdata[item['bit']+item['size']:]
+    data = int(bitdata, 2)
+    print(bitdata)
+    print(data)
+    string = "%04X" % (data)
+    if item['size'] > 8:
+        bitfieldblock[0].setText(string[:2])
+        bitfieldblock[1].setText(string[2:])
+    else:
+        bitfieldblock[0].setText(string[2:])
+    
+    
+def ascii_change(box, item, bitfieldblock, *args, **kwargs):
+    pass
+    
 class ItemEncoder(object):
     items = []
 
     def __init__(self):
         self.items = [Fields.block(block) for block in range(1, 10)]
+        
+    def QtItemList(self, block, asbuilt, bitfields):
+        qtitems = []
+        prevbyte = 0
+        for item in Fields.block(block):
+            if prevbyte != item['byte']:
+                layout = QHBoxLayout()
+                line = QFrame()
+                line.setFrameShape(QFrame.HLine)
+                line.setFrameShadow(QFrame.Sunken)
+                layout.addWidget(line)
+                qtitems.append(layout)
+                prevbyte = item['byte']
+            bitloc = asbuilt.start_bit(block) + ((item['byte']) * 8) + item['bit']
+            layout = QHBoxLayout()
+            label = QLabel(item['name'])
+            option = QComboBox()
+            unit = None
+            value = asbuilt.bit(bitloc, item['size'])
+            if item['type'] == 'mul':
+                # inputfield
+                value = (asbuilt.bit(bitloc, item['size']) * item['multiplier']) + item['offset']
+                option = QLineEdit()
+                option.setValidator(QDoubleValidator())
+                option.setText("%.02f" % (value))
+                option.setMaximumWidth(50)
+                option.editingFinished.connect(partial(value_change, option, item, bitfields[item['byte']:item['byte']+2 if item['size'] > 8 else item['byte']+1]))
+                unit = QLabel(item['unit'])
+                unit.setMaximumWidth(50)
+                unit.setMinimumWidth(50)
+            elif item['type'] == 'mask':
+                # combobox
+                for x in range(0, item['items']):
+                    option.addItem("" if '%d' % x not in item else item['%d' % x], x)
+                option.setMaximumWidth(400)
+                option.setCurrentIndex(value)
+                #print(item['byte'])
+                #print(bitfields)
+                option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+
+            elif item['type'] == 'ascii':
+                option = QLineEdit()
+                option.setValidator(QRegExpValidator(QRegExp("[A-Z]")))
+                option.setText("%s" % (chr(value)))
+                option.editingFinished.connect(partial(ascii_change, option, item, bitfields[item['byte']]))
+                option.setMaximumWidth(50)
+            elif item['type'] == 'table':
+                table = JumpTables.table(item['table'])
+                for x in range(0, len(table)):
+                    option.addItem(table[x], x)
+                option.setMaximumWidth(400)
+                option.setCurrentIndex(value)
+                option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+            layout.addWidget(label)
+            layout.addWidget(option)
+            if unit is not None:
+                layout.addWidget(unit)
+            option.abitem = item
+            qtitems.append(layout)
+            
+            
+        return qtitems
 
     def format_all(self, ab1, ab2):
         if ab2 is not None and len(ab1) < len(ab2):
@@ -533,3 +647,12 @@ def print_bits_known_de07_08():
         c += 1
     print("")
 
+def print_duplicates():
+    indexes = []
+    for i in range(1, 10):
+        block = Fields.block(i)
+        for item in block:
+            if item['index'] in indexes:
+                print("Duplicate: %d", item['index'])
+            else:
+                indexes.append(item['index'])

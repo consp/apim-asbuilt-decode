@@ -64,6 +64,18 @@ class AsBuilt(object):
     def checksum(self, major, minor):
         return (0x07 + 0xD0 + major + minor + sum(self.blocks[major - 1][(minor-1) * 5:minor * 5])) & 0x00FF
 
+    def save(self):
+        string = "; Created with apim.py, https://github.com/consp/apim-asbuilt-decode\n"
+        for x in range(1, self.block_size() + 1):
+            # 7D0G5G1169B1674263E
+            string = string + "; Block %d \n" % (x)
+            for z in range(0, len(self.blocks[x - 1]),5):
+                string = string + "7D0G%dG%d" % (x, (z // 5) + 1)
+                for d in self.blocks[x - 1][z:z+5]:
+                    string = string + "%02X" % (d)
+                string = string + "%02X" % (self.checksum(x, (z // 5) + 1)) + "\n"
+        return string
+
     def byte(self, byte):
         if byte > sum(self.fieldsizes) or byte > (self.size() // 8) - 1:
             return None
@@ -103,6 +115,9 @@ class AsBuilt(object):
 
     def block(self, block):
         return self.blocks[block]
+        
+    def block_size(self):
+        return len(self.blocks)
 
     def hasblock(self, block):
         return block <= len(self.blocks)
