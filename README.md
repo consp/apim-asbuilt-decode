@@ -16,7 +16,7 @@ Please note that some settings change quite a lot. Most radio and CGEA/C1MCA set
 
 ## Acknowledgements
 
-Since I do not own a gen 4 module (Sync 3.3 and up) it is imposible to test things for me. I got most of the info from DE07/08 (7D0-08/09) from code but information was missing, like detailed names and some exact bit locations especially for 7D0-08. The data was corrected by the F150 ASBuilt sheet from the F150Forums which confirmed the data present in code. I'm not completely shure who is/are the author(s), so if somebody can tell me, send me a message.
+Since I do not own a gen 4 module (Sync 3.3 and up) it is imposible to test things for me. I got most of the info from DE07/08 (7D0-08/09) from code but information was missing, like detailed names and some exact bit locations especially for 7D0-08. The data was corrected by the F150 ASBuilt sheet from the F150Forums which confirmed the data present in code. I'm not completely sure who is/are the author(s), so if somebody can tell me, send me a message.
 
 
 
