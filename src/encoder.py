@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGroupBox, QMessageBox, QComboBox, QScrollArea, QLineEdit, QSizePolicy, QFrame
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QLayout, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGroupBox, QMessageBox, QComboBox, QScrollArea, QLineEdit, QSizePolicy, QFrame, QLabel
 from PyQt5.QtGui import QDoubleValidator, QRegExpValidator
-from PyQt5.QtCore import QRegExp
+from PyQt5.QtCore import QRegExp, Qt
 
 from functools import partial
 from statics import JumpTables, Fields
@@ -421,19 +421,50 @@ def ascii_change(box, item, bitfieldblock, *args, **kwargs):
 class ItemEncoder(object):
     items = []
 
+    def byte_loc_string(self, i, bits):
+        if i == 0:
+            if bits <= 8:
+                return "NNxx xxxx xxcc"
+            else:
+                return "NNNN xxxx xxcc"
+        elif i == 1:
+            if bits <= 8:
+                return "xxNN xxxx xxcc"
+            else:
+                return "xxNN NNxx xxcc"
+        elif i == 2:
+            if bits <= 8:
+                return "xxxx NNxx xxcc"
+            else:
+                return "xxxx NNNN xxcc"
+        elif i == 3:
+            if bits <= 8:
+                return "xxxx xxNN xxcc"
+            else:
+                return "xxxx xxNN NNcc"
+        if bits <= 8:
+            return "xxxx xxxx NNcc"
+        else:
+            return "xxxx xxxx NNcc + NNxx xxxx xxcc"
+
     def __init__(self):
         self.items = [Fields.block(block) for block in range(1, 10)]
         
     def QtItemList(self, block, asbuilt, bitfields):
         qtitems = []
-        prevbyte = 0
+        prevbyte = -1
         for item in Fields.block(block):
             if prevbyte != item['byte']:
                 layout = QHBoxLayout()
+                label = QLabel()
+                label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+                label.setText("7D0-%02X-%02X %s" % (block, (item['byte'] // 5) + 1, self.byte_loc_string(item['byte'] % 5, item['size'])))
+                label.adjustSize()
                 line = QFrame()
                 line.setFrameShape(QFrame.HLine)
                 line.setFrameShadow(QFrame.Sunken)
-                layout.addWidget(line)
+                layout.addWidget(label)
+                layout.addWidget(line, stretch=1)
                 qtitems.append(layout)
                 prevbyte = item['byte']
             bitloc = asbuilt.start_bit(block) + ((item['byte']) * 8) + item['bit']
