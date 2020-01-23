@@ -71,19 +71,19 @@ class JumpTables(object):
             "Unknown",
             "Unknown",
             "Unknown",
+            "Lincoln Black (Requires Lincoln Theme)",
+            "Lincoln Presidential (Requires Lincoln Theme)",
             "Unknown",
-            "Lincoln Black",
-            "Lincoln Presidential",
             "Mustang",
             "GT350",
-            "Vignale",
-            "GT350",
+            "Ford Classic Vignale (Might require Ford Classic Theme)",
+            "GT350R",
             "Unknown",
-            "Ford Performance ST",
-            "Ford Performance RS",
-            "Ford Performance GT",
-            "Continental",
-            "Unknown",
+            "Ford Performance ST (Might require Ford Timeless Theme)",
+            "Ford Performance RS (Might require Ford Timeless Theme)",
+            "Ford Performance GT (Requires Ford GT Theme)",
+            "Lincoln Continental (Requires Lincoln Theme)",
+            "Lincoln Navigator MY18+ with 10\" Display",
             ]
 
     _VS = [
@@ -196,6 +196,7 @@ class JumpTables(object):
             "Ford Timeless",
             "Lincoln Timeless",
             "Lincoln Next",
+            "Ford GT Theme (Not available on later Sync 3 updates)",
             ]
 
     _KC = [ # case KEY combination

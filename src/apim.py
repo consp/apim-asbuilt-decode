@@ -8,7 +8,8 @@ if sys.version_info[1] < 4:
 try:
     from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGroupBox, QMessageBox, QComboBox, QScrollArea, QSizePolicy, QTabWidget, QLineEdit
     from PyQt5.QtGui import QDoubleValidator, QRegExpValidator
-    from PyQt5.QtCore import QRegExp
+    from PyQt5.QtCore import QRegExp, Qt
+    from functools import partial
 except:
     raise Exception("PyQt5 required")
 
@@ -21,6 +22,17 @@ from encoder import HmiData, print_bits_known_de07_08, ItemEncoder, print_duplic
 from statics import JumpTables, Fields
 # global imports
 import argparse
+
+def calc_change(block, loc, cfield, fields):
+    x = []
+    x.append(0x07)
+    x.append(0xD0)
+    x.append(block)
+    x.append(loc)
+    for f in fields:
+        x.append(int(f.text(), 16))
+
+    cfield.setText("%02X" % (sum(x) & 0x00FF))
 
 class QtApp(object):
     
@@ -165,14 +177,53 @@ class QtApp(object):
             blockview_layout = QHBoxLayout()
             blockview.setLayout(blockview_layout)
             self.textblocks.append([])
+            bt = 0
             for byte in self.asbuilt.block(x-1):
                 text = QLineEdit()
                 text.setValidator(QRegExpValidator(QRegExp("[0-9A-F][0-9A-F]")))
                 text.setText("%02X" % (byte))
                 text.setMaximumWidth(22)
-                text.setEnabled(False)
-                blockview_layout.addWidget(text)
+                text.setReadOnly(True)
+                if (bt % 5) == 0:
+                    label = QLabel()
+                    label.setText("7D01-%02X-%02X" % (x, (bt//5)+1))
+                    label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                    blockview_layout.addWidget(label, stretch=0)
+                    blockview_layout.addWidget(text, stretch=1)
+                else:
+                    blockview_layout.addWidget(text, stretch=0)
+                    if bt % 5 == 1 or bt % 5 == 3:
+                        label2 = QLabel()
+                        label2.setText(" ")
+                        label2.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+                        label2.adjustSize()
+                        blockview_layout.addWidget(label2, stretch=0)
+
+
+
+                bt += 1
                 self.textblocks[x-1].append(text)
+
+                if bt % 5 == 0:
+                    text = QLineEdit()
+                    text.setValidator(QRegExpValidator(QRegExp("[0-9A-F][0-9A-F]")))
+                    calc_change(x, ((bt-1) // 5) + 1, text, self.textblocks[x-1][bt-5:bt])
+                    text.setMaximumWidth(22)
+                    text.setReadOnly(True)
+                    for n in self.textblocks[x-1][bt-5:bt]:
+                        n.textChanged.connect(partial(calc_change, x, ((bt-1) // 5) + 1, text, self.textblocks[x-1][bt-5:bt]))
+                    blockview_layout.addWidget(text)
+                    blockview_layout.addStretch(1)
+            if bt % 5 != 0:
+                text = QLineEdit()
+                text.setValidator(QRegExpValidator(QRegExp("[0-9A-F][0-9A-F]")))
+                calc_change(x, ((bt-1) // 5) + 1, text, self.textblocks[x-1][bt-(bt % 5):bt])
+                text.setMaximumWidth(22)
+                text.setReadOnly(True)
+                for n in self.textblocks[x-1][bt-(bt % 5):bt]:
+                    n.textChanged.connect(partial(calc_change, x, ((bt-1) // 5) + 1, text, self.textblocks[x-1][bt-(bt % 5):bt]))
+                blockview_layout.addWidget(text)
+                blockview_layout.addStretch(1)
 
             setup = QWidget()
             setup_layout = QVBoxLayout()
