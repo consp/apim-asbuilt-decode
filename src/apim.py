@@ -35,38 +35,38 @@ def calc_change(block, loc, cfield, fields):
     cfield.setText("%02X" % (sum(x) & 0x00FF))
 
 class QtApp(object):
-    
-    app = None 
+
+    app = None
     main_layout = None
     main_window = None
     button_open = None
     button_exit = None
     button_save = None
     button_save_as = None
-    
+
     current_window = None
-    
+
     picker_window = None
     picker_layout = None
-    
+
     selected_file = None
     asbuilt = None
     encoder = None
-    
+
     blockdata = None
-    
+
     block = 1
-    
+
     textblocks = []
-    
+
     def open_file(self):
         window = self.current_window
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        files, _ = QFileDialog.getOpenFileName(window, "Select ASBuilt file...", "","ForScan files (*.abt);;Ford ASBuilt XML (*.ab);;All Files (*)", options=options)
+        files, _ = QFileDialog.getOpenFileName(window, "Select ASBuilt file...", "","ForScan files (*.abt);;Ford ASBuilt XML (*.ab);;UCDS XML files (*.xml);;All Files (*)", options=options)
         if files:
             self.selected_file = files
-            
+
         if self.selected_file is not None:
             try:
                 self.asbuilt = AsBuilt(self.selected_file)
@@ -76,8 +76,8 @@ class QtApp(object):
                 QMessageBox.critical(self.current_window, "Error opening file", str(e))
                 self.selected_file = None
                 self.current_window.show()
-            
-            
+
+
     def save_file_as(self, window=None):
         window = self.current_window
         options = QFileDialog.Options()
@@ -89,10 +89,10 @@ class QtApp(object):
             self.selected_file = self.selected_file[:-3]
         if not self.selected_file.endswith(".abt"):
             self.selected_file = self.selected_file + ".abt"
-            
+
         if self.selected_file is not None and files is not None and len(files) > 0:
             self.save(overwrite=True)
-                
+
     def save(self, overwrite=False):
         for x in range(0, self.asbuilt.block_size()):
             block = list(self.asbuilt.blocks[x])
@@ -100,7 +100,7 @@ class QtApp(object):
                 block[b] = int(self.textblocks[x][b].text(), 16)
             self.asbuilt.blocks[x] = bytes(block)
         string = self.asbuilt.save()
-        
+
         print("Saving to %s" % self.selected_file)
         print(string)
         item = False
@@ -116,26 +116,26 @@ class QtApp(object):
             except Exception as e:
                 QMessageBox.critical(self.current_window, "Error saving to file", str(e))
                 pass
-            
-        
-        
-        
+
+
+
+
     def block_change(self):
         print("Selected item %d" % (self.block_combo_box.currentIndex()))
         self.block = self.block_combo_box.currentIndex() + 1
         self.add_blockitems()
-        
-        
+
+
     def launch_picker(self):
         self.main_window.hide()
         if self.picker_window is not None:
             self.picker_window.hide()
-        
+
         self.picker_window = QWidget()
         self.picker_window.resize(1024, 800)
 
         self.picker_layout = QVBoxLayout()
-        
+
         ## main group
         self.button_group = QGroupBox("Main things")
         self.button_group_layout = QHBoxLayout()
@@ -143,22 +143,22 @@ class QtApp(object):
         self.button_save_as = QPushButton("Save as ...") if self.button_save_as is None else self.button_save_as
         self.button_save_as.clicked.connect(self.save_file_as)
         self.button_save.clicked.connect(self.save)
-        
+
         self.button_group_layout.addWidget(self.button_open)
         self.button_group_layout.addWidget(self.button_save)
         self.button_group_layout.addWidget(self.button_save_as)
         self.button_group_layout.addWidget(self.button_exit)
         self.button_group.setLayout(self.button_group_layout)
-        
+
         ## Block group
         self.block_group = QGroupBox("Select block")
         self.block_group_layout = QVBoxLayout()
-        
+
         #self.block_combo_box = QComboBox()
-        
+
         #self.block_combo_box.addItems(["7D0-%02X or DE%02X" % (x, x-1) for x in range(1, self.asbuilt.size()+1)])
         #self.block_combo_box.currentIndexChanged.connect(self.block_change)
-        
+
         self.tabs = QTabWidget()
         self.tab = []
         self.textblocks = []
@@ -166,13 +166,13 @@ class QtApp(object):
             block_items_group = QGroupBox()
             block_items_layout = QVBoxLayout()
             block_items_group.setLayout(block_items_layout)
-            
+
             setup = QWidget()
-            
+
             scroll_area = QScrollArea()
             scroll_area.setWidget(block_items_group)
             scroll_area.setWidgetResizable(True)
-            
+
             blockview = QGroupBox("Binary")
             blockview_layout = QHBoxLayout()
             blockview.setLayout(blockview_layout)
@@ -230,31 +230,31 @@ class QtApp(object):
             setup_layout.addWidget(blockview)
             setup_layout.addWidget(scroll_area)
             setup.setLayout(setup_layout)
-            
+
             items = self.encoder.QtItemList(x, self.asbuilt, self.textblocks[x-1])
             for item in items:
                 block_items_layout.addLayout(item)
             self.tab.append(setup)
             self.tabs.addTab(self.tab[x - 1], "7D0-%02X" % (x))
-            
-       
-        
+
+
+
         #self.block_group_layout.addWidget(self.block_combo_box)
         self.block_group_layout.addWidget(self.tabs)
         self.block_group.setLayout(self.block_group_layout)
-        
+
         self.picker_layout.addWidget(self.button_group)
         self.picker_layout.addWidget(self.block_group)
-        
+
         self.picker_window.setLayout(self.picker_layout)
         self.current_window = self.picker_window
         #self.picker_window.setSizePolicy(QSizePolicy.Expanding)
         self.picker_window.show()
-                
+
     def launch_qt(self):
         self.app = QApplication([])
         self.app.setStyle('Fusion')
-        
+
         self.main_window = QWidget()
         self.main_layout = QVBoxLayout()
 

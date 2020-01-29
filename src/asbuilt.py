@@ -11,7 +11,7 @@ class AsBuilt(object):
     def __init__(self, filename):
         bits = ""
         print("Loading", filename)
-        if filename.endswith(".abt"):
+        if filename.lower().endswith(".abt"):
             # file from ForScan
             print("Forscan ABT format")
             with open(filename, "r") as f:
@@ -25,7 +25,7 @@ class AsBuilt(object):
                 if len(line) == 0 or line[0] == ";":
                     continue
                 bits = bits + line[7:-2]
-        elif filename.endswith(".ab"):
+        elif filename.lower().endswith(".ab"):
             print("Loading Ford XML file")
             # ab file from motorcraft site / ford
             tree = ET.parse(filename)
@@ -39,6 +39,16 @@ class AsBuilt(object):
                         if code.text is not None:
                             bits = bits + code.text
                     bits = bits[:-2]
+        elif filename.lower().endswith(".xml"):
+            print("Loading UCDS Direct configuration XML file")
+            # ab file from motorcraft site / ford
+            tree = ET.parse(filename)
+            root = tree.getroot()
+            data = root.find(".//VEHICLE")
+            for child in list(data):
+                block = child.attrib['ID']
+                if block.startswith('DE'):
+                    bits = bits + child.text
         else:
             raise ValueError("File type not supported")
         self.filename = filename
@@ -115,7 +125,7 @@ class AsBuilt(object):
 
     def block(self, block):
         return self.blocks[block]
-        
+
     def block_size(self):
         return len(self.blocks)
 
