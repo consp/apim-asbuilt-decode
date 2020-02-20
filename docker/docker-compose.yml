@@ -1,0 +1,18 @@
+version: "3"
+services:
+    python3-x64:
+        build:
+            context: .
+            dockerfile: Dockerfile-python3-x64
+        volumes:
+            - ../src/:/src/
+            - ../bin/:/dist/
+            - ../build/:/build/
+    python3-x86:
+        build:
+            context: .
+            dockerfile: Dockerfile-python3-x86
+        volumes:
+            - ../src/:/src/
+            - ../bin/:/dist/
+            - ../build/:/build/
