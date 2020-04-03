@@ -68,22 +68,27 @@ class JumpTables(object):
     _WDC = []
 
     _SS = [ # case splashscreen, no lookup table present in program
-            "Unknown",
-            "Unknown",
-            "Unknown",
-            "Lincoln Black (Requires Lincoln Theme)",
-            "Lincoln Presidential (Requires Lincoln Theme)",
-            "Unknown",
-            "Mustang",
-            "GT350",
-            "Ford Classic Vignale (Might require Ford Classic Theme)",
-            "GT350R",
-            "Unknown",
-            "Ford Performance ST (Might require Ford Timeless Theme)",
-            "Ford Performance RS (Might require Ford Timeless Theme)",
-            "Ford Performance GT (Requires Ford GT Theme)",
-            "Lincoln Continental (Requires Lincoln Theme)",
+            "Unknown (not used in 3.4)",
+            "Unknown (not used in 3.4)",
+            "Unknown (not used in 3.4)",
+            "Lincoln Black (Lincoln Timeless/D544)",
+            "Lincoln Presidential (Lincoln Timeless)",
+            "Raptor (Ford Timeless)",
+            "Mustang (Ford Timeless)",
+            "GT350 Shelby (Ford Timeless)",
+            "Ford Classic Vignale (Ford Classic/Ford Timeless)",
+            "GT350R Shelby (Ford Timeless)",
+            "Unknown (not used in 3.4)",
+            "Ford Performance ST (Ford MY20/Ford 10\" MY20)",
+            "Ford Performance RS (Ford Timeless)",
+            "Ford Performance GT (Does not work in 3.4!)",
+            "Lincoln Continental (Lincoln D544)",
             "Lincoln Navigator MY18+ with 10\" Display",
+            "Ford EVO (Ford Classic)",
+            "Lincoln U611 (Lincoln MY20)",
+            "Ford U625 (Ford MY20/Ford 10\" MY20)",
+            "Lincoln CX483 (Lincoln MY20)",
+            "Lincoln U540 (Lincoln D544/Lincoln Classic but sets MY20 theme)",
             ]
 
     _VS = [
@@ -192,11 +197,15 @@ class JumpTables(object):
             ]
 
     _VDV = [ # case visual design variant
-            "Ford Classic",
+            "Ford Classic, in 3.4 and up it sets either Classic or MY20 icw bootscreen theme",
             "Ford Timeless",
             "Lincoln Timeless",
-            "Lincoln Next",
-            "Ford GT Theme (Not available on later Sync 3 updates)",
+            "Lincoln Next, in 3.4 and up it sets either Next or D544 icw bootscreen theme",
+            "Ford GT Theme (Not available on later Sync 3.2 afer My18.5)",
+            "Not used",
+            "Not used",
+            "Lincoln MY 20",
+            "Ford 10\" MY20",
             ]
 
     _KC = [ # case KEY combination
@@ -647,9 +656,9 @@ class Fields(object):
             'items': 4 ,
             'type': 'mask',
             '0': 'Ford',
-            '1': 'Reserved',
+            '1': 'Reserved (not used in 3.4)',
             '2': 'Lincoln',
-            '3': 'Configurable Splash Screen',
+            '3': 'Configurable Splash Screen (not used in 3.4)',
         },
         {
             'name': 'Hybrid (HEV)',
@@ -1037,7 +1046,7 @@ class Fields(object):
             'type': 'ascii',
         },
         {
-            'name': 'Splash Screen',
+            'name': 'Splash Screen, also sets some themes',
             'index': 72,
             'byte': 2,
             'bit': 0,
