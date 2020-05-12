@@ -390,11 +390,11 @@ def combo_change(box, item, bitfieldblock, *args, **kwargs):
     data = int(bitdata, 2)
 
     bitfieldblock.setText("%02X" % (data))
-    
+
 def value_change(box, item, bitfieldblock, *args, **kwargs):
     value = float(box.text())
 
-        
+
     if value > item['max']:
         value = item['max']
     elif value < item['min']:
@@ -411,13 +411,13 @@ def value_change(box, item, bitfieldblock, *args, **kwargs):
         bitfieldblock[1].setText(string[2:])
     else:
         bitfieldblock[0].setText(string[2:])
-    
-    
+
+
 def ascii_change(box, item, bitfieldblock, *args, **kwargs):
     value = box.text()
     #bitdata = bitdata[:item['bit']] + ("{0:0%db}" % (item['size'])).format(value) + bitdata[item['bit']+item['size']:]
     bitfieldblock.setText("%02X" % (ord(value[0])))
-    
+
 class ItemEncoder(object):
     items = []
 
@@ -449,7 +449,7 @@ class ItemEncoder(object):
 
     def __init__(self):
         self.items = [Fields.block(block) for block in range(1, 10)]
-        
+
     def QtItemList(self, block, asbuilt, bitfields):
         qtitems = []
         prevbyte = -1
@@ -513,8 +513,8 @@ class ItemEncoder(object):
                 layout.addWidget(unit)
             option.abitem = item
             qtitems.append(layout)
-            
-            
+
+
         return qtitems
 
     def format_all(self, ab1, ab2):
@@ -586,7 +586,7 @@ class ItemEncoder(object):
                         string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
                                 ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
                                 "2>" if ab2 is not None and x == value2 else "",
-                                "%02X" % x,
+                                "%02X" % (x << (((7 - item['bit']) - (item['size'] - 1)) % 8)),
                                 "" if '%d' % x not in item else item['%d' % x]
                                 )
                 elif item['type'] == 'ascii':
