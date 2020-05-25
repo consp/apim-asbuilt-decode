@@ -3772,3 +3772,55 @@ class Fields(object):
             '1': 'Supported',
         },
     ]
+
+class CCTypes():
+    ENUM = 1
+    FLAG = 2
+    VALUE = 3
+
+class CCItem():
+    name = ""
+    index = ""
+    byte = 0
+    bit = 0
+    size = 0
+    itemlist = []
+    type = None
+
+    def __init__(self, name, index, byte, bit, size, items=None, type=CCTypes.ENUM):
+        self.name = name
+        self.index = index
+        self.byte = byte
+        self.bit = bit
+        self.size = size
+        self.itemlist = items if items is not None else []
+        self.type = type
+
+    @property
+    def items(self):
+        return len(self.itemlist)
+
+    @property
+    def item(self):
+        return self.itemlist
+
+    def decode(self, value):
+        try:
+            s = "[ %3d ] %s:%s" % (self.index, self.name, (32 - len(self.name)) * " ")
+            v = value[self.byte]
+            d = (v >> self.bit) & ((2**self.size) - 1)
+            if self.type == CCTypes.ENUM:
+                pass
+            elif self.type == CCTypes.VALUE:
+                s = s + "%d [%02X]" % (d, d)
+            elif self.type == CCTypes.FLAG:
+                pass
+            return s
+        except:
+            return None
+
+class CentralConfiguration:
+    FIESTA = [
+        CCItem("Checksum", 0, 0, 0, 8, items=[], type=CCTypes.VALUE)
+        CCItem("Vehicle Type", 1, 1, 0, 8)
+    ]
