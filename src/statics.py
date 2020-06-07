@@ -3793,7 +3793,14 @@ class CCItem():
         self.byte = byte
         self.bit = bit
         self.size = size
-        self.itemlist = items if items is not None else []
+        if type == CCTypes.ENUM:
+            self.itemlist = ["Unknown" for i in range(0, 2**size)]
+            self.itemlist[0] = "Not configured"
+            if items is not None:
+                for item in items:
+                    self.itemlist[item[0]] = item[1]
+        else:
+            self.itemlist = items if items is not None else []
         self.type = type
 
     @property
@@ -3804,23 +3811,356 @@ class CCItem():
     def item(self):
         return self.itemlist
 
-    def decode(self, value):
+    def decode(self, value, other=None, other2=None):
         try:
-            s = "[ %3d ] %s:%s" % (self.index, self.name, (32 - len(self.name)) * " ")
+            s = "[ %3d ] %s:%s" % (self.index, self.name, (40 - len(self.name)) * " ")
             v = value[self.byte]
             d = (v >> self.bit) & ((2**self.size) - 1)
-            if self.type == CCTypes.ENUM:
-                pass
-            elif self.type == CCTypes.VALUE:
-                s = s + "%d [%02X]" % (d, d)
-            elif self.type == CCTypes.FLAG:
-                pass
+            if other is None:
+                if self.type == CCTypes.ENUM:
+                    s = s + "%02X %s" % (d, self.itemlist[d])
+                elif self.type == CCTypes.VALUE:
+                    s = s + "%02X [%d]" % (d, d)
+                elif self.type == CCTypes.FLAG:
+                    s = s + "%02X %s" % (d, "True" if d else "False")
+            else:
+                v2 = other[self.byte]
+                d2 = (v2 >> self.bit) & ((2**self.size) - 1)
+                if other2 is not None:
+                    v3 = other2[self.byte]
+                    d3 = (v3 >> self.bit) & ((2**self.size) - 1)
+                    if self.type == CCTypes.ENUM:
+                        s = s + "%-32s [%02X] - [%02X] %32s - %-32s [%02X]" % (self.itemlist[d], d, d2, self.itemlist[d2] if d != d2 else "--",  self.itemlist[d3] if d != d3 else "--", d3)
+                    elif self.type == CCTypes.VALUE:
+                        s = s + "                                  %02X  -  %02X                                  - %02X" % (d, d2, d3)
+                    elif self.type == CCTypes.FLAG:
+                        s = s + "%02X %s" % (d, "True" if d else "False")
+                    else:
+                        s = s + "???"
+                else:
+                    if self.type == CCTypes.ENUM:
+                        s = s + "%-32s [%02X] - [%02X] %32s" % (self.itemlist[d], d, d2, self.itemlist[d2] if d != d2 else "--")
+                    elif self.type == CCTypes.VALUE:
+                        s = s + "                                  %02X  -  %02X" % (d, d2)
+                    elif self.type == CCTypes.FLAG:
+                        s = s + "%02X %s" % (d, "True" if d else "False")
+                    else:
+                        s = s + "???"
             return s
-        except:
+        except Exception as e:
+
+            print(e)
             return None
+
 
 class CentralConfiguration:
     FIESTA = [
-        CCItem("Checksum", 0, 0, 0, 8, items=[], type=CCTypes.VALUE)
-        CCItem("Vehicle Type", 1, 1, 0, 8)
+        CCItem("Checksum", 0, 1, 0, 8, items=[], type=CCTypes.VALUE),
+        CCItem("Vehicle Type", 1, 2, 0, 8, items=[
+            [0x17, "Ford Fiesta"],
+            [0x32, "Ford C-Max"],
+            [0x45, "Ford Focus"]]),
+        CCItem("Doors", 2, 3, 0, 8, items=[
+            [0x02, "5-Door"],
+            [0x03, "4-Door"],
+            [0x07, "3-Door"]
+        ]),
+        CCItem("Driveline", 3, 4, 0, 8, items=[
+            [0x01, "2 Wheel drive (FWD)"],
+            [0x02, "4 Wheel drive (AWD)"],
+        ]),
+        CCItem("Bi-Fuel", 4, 5, 0, 8),
+        CCItem("Engine", 5, 6, 0, 8, items=[
+            [0x3A, "1.0L GTDI 92Kw"],
+        ]),
+        CCItem("Fuel Type", 6, 7, 0, 8, items=[
+            [0x01, "Petrol"],
+            [0x02, "Diesel"],
+            [0x04, "Flex Fuel"],
+            [0x07, "Electrons (electric)"]
+        ]),
+        CCItem("Alternator", 7, 8, 0, 8, items=[
+            [0x01, "150 A"],
+            [0x04, "120 A"]
+        ]),
+        CCItem("Steering wheel position", 8, 9, 0, 8, items=[
+            [0x01, "LHD"],
+            [0x02, "RHD"]
+        ]),
+        CCItem("Gearbox", 9, 10, 0, 8, items=[
+            [0x11, "5 Speed manual FWD"],
+            [0x44, "B6 6 speed manual FWD"]
+        ]),
+        CCItem("Gearbox2", 10, 11, 0, 8),
+        CCItem("Fuel Tank volume", 11, 12, 0, 8),
+        CCItem("Alarm", 12, 13, 0, 8, items=[
+            [0x01, "No alarm"]
+        ]),
+        CCItem("?", 13, 14, 0, 8),
+        CCItem("Headlights configuration", 14, 15, 0, 8, items=[
+            [0x11, "Headlights projector with DRL"]
+        ]),
+        CCItem("Headlamps", 15, 16, 0, 8, items=[
+            [0x02, "Always dipped light except in position-P"],
+            [0x03, "RH Symmetry"]
+        ]),
+        CCItem("DRL", 16, 17, 0, 8, items=[
+            [0x05, "RH Symmetry"]
+        ]),
+        CCItem("Dimmed dipped headlights", 17, 18, 0, 8, items=[]),
+        CCItem("Foglight function", 18, 19, 0, 8, items=[
+            [0x02, "Foglights"]
+        ]),
+        CCItem("Rear foglight tow function", 19, 20, 0, 8, items=[]),
+        CCItem("Trailer module", 20, 21, 0, 8, items=[
+            [0x01, "Without trailer module"]
+        ]),
+        CCItem("Keyless entry and start", 21, 22, 0, 8, items=[
+            [0x01, "Without keyless entry and start"]
+        ]),
+        CCItem("Fuel heater", 22, 23, 0, 8, items=[
+            [0x01, "Without Fiel fire heater"]
+        ]),
+        CCItem("Cruise control", 23, 24, 0, 8, items=[
+            [0x01, "Without cruise control"],
+            [0x02, "With cruise control"]
+        ]),
+        CCItem("Rain sensor", 24, 25, 0, 8, items=[]),
+        CCItem("Headlight cleaning", 25, 26, 0, 8, items=[]),
+        CCItem("Power steering type", 26, 27, 0, 8, items=[]),
+        CCItem("Trip computer", 27, 28, 0, 8, items=[]),
+        CCItem("Private locking trunk", 28, 29, 0, 8, items=[]),
+        CCItem("Child lock", 29, 30, 0, 8, items=[]),
+        CCItem("Unlocking settings", 30, 31, 0, 8, items=[]),
+        CCItem("Acknowledge signal lock/alarm", 31, 32, 0, 8, items=[]),
+        CCItem("Automatic locking by speed", 32, 33, 0, 8, items=[]),
+        CCItem("Level sensor - if alarm", 33, 34, 0, 8, items=[]),
+        CCItem("Reset - if alarm", 34, 35, 0, 8, items=[]),
+        CCItem("Passive Alarm Activation", 35, 36, 0, 8, items=[]),
+        CCItem("Panic Alarm", 36, 37, 0, 8, items=[]),
+        CCItem("Blind spot information system", 37, 38, 0, 8, items=[]),
+        CCItem("Road friction detection", 38, 39, 0, 8, items=[]),
+        CCItem("PTC heater", 39, 40, 0, 8, items=[]),
+        CCItem("Battery", 40, 41, 0, 8, items=[]),
+        CCItem("Coupe filter", 41, 42, 0, 8, items=[]),
+        CCItem("Climate control unit", 42, 43, 0, 8, items=[]),
+        CCItem("Speed limitation", 43, 44, 0, 8, items=[]),
+        CCItem("Speed Warning Device", 44, 45, 0, 8, items=[]),
+        CCItem("Instrumental Cluster Calibration", 45, 46, 0, 8, items=[]),
+        CCItem("???", 46, 47, 0, 8, items=[]),
+        CCItem("Interior motion sensor", 47, 48, 0, 8, items=[]),
+        CCItem("???", 48, 49, 0, 8, items=[]),
+        CCItem("???", 49, 50, 0, 8, items=[]),
+        CCItem("???", 50, 51, 0, 8, items=[]),
+        CCItem("Tire circumference", 51, 52, 0, 8, items=[]),
+        CCItem("???", 52, 53, 0, 8, items=[]),
+        CCItem("???", 53, 54, 0, 8, items=[]),
+        CCItem("???", 54, 55, 0, 8, items=[]),
+        CCItem("???", 55, 56, 0, 8, items=[]),
+        CCItem("Callstart of parking heater", 56, 57, 0, 8, items=[]),
+        CCItem("Parking brake", 57, 58, 0, 8, items=[]),
+        CCItem("Heated windshield", 58, 59, 0, 8, items=[]),
+        CCItem("Parking assistance", 59, 60, 0, 8, items=[]),
+        CCItem("Hill Descent Control", 60, 61, 0, 8, items=[]),
+        CCItem("Safety belt reminder", 61, 62, 0, 8, items=[]),
+        CCItem("Brand", 62, 63, 0, 8, items=[]),
+        CCItem("Frequency - remote controls", 63, 64, 0, 8, items=[]),
+        CCItem("Air condition, rear", 64, 65, 0, 8, items=[]),
+        CCItem("Glass type", 65, 66, 0, 8, items=[]),
+        CCItem("Roof type", 66, 67, 0, 8, items=[]),
+        CCItem("Octane rating", 67, 68, 0, 8, items=[]),
+        CCItem("Emission standard", 68, 69, 0, 8, items=[]),
+        CCItem("Body style", 69, 70, 0, 8, items=[]),
+        CCItem("Tire dimension", 70, 71, 0, 8, items=[]),
+        CCItem("Final Drive Ratio", 71, 72, 0, 8, items=[]),
+        CCItem("???", 72, 73, 0, 8, items=[]),
+        CCItem("Loudspeaker quantities", 73, 74, 0, 8, items=[]),
+        CCItem("Suspension", 74, 75, 0, 8, items=[
+            [0x02, "Sport suspension"],
+            [0x16, "Special suspension"]
+        ]),
+        CCItem("Integrated vehicle dynamic control", 75, 76, 0, 8, items=[]),
+        CCItem("Towbar", 76, 77, 0, 8, items=[]),
+        CCItem("?", 77, 78, 0, 8, items=[]),
+        CCItem("?", 78, 79, 0, 8, items=[]),
+        CCItem("?", 79, 80, 0, 8, items=[]),
+        CCItem("?", 80, 81, 0, 8, items=[]),
+        CCItem("Active suspension", 81, 82, 0, 8, items=[]),
+        CCItem("?", 82, 83, 0, 8, items=[]),
+        CCItem("Central lock, type", 83, 84, 0, 8, items=[]),
+        CCItem("?", 84, 85, 0, 8, items=[]),
+        CCItem("Rear view mirrors", 85, 86, 0, 8, items=[]),
+        CCItem("Memory function", 86, 87, 0, 8, items=[]),
+        CCItem("Puddle lamp", 87, 88, 0, 8, items=[]),
+        CCItem("Automatic Lights", 88, 89, 0, 8, items=[]),
+        CCItem("Airbag", 89, 90, 0, 8, items=[]),
+        CCItem("Cutoff switch passenger airbag", 90, 91, 0, 8, items=[]),
+        CCItem("Side airbag driver", 91, 92, 0, 8, items=[]),
+        CCItem("Side airbag passenger", 92, 93, 0, 8, items=[]),
+        CCItem("Language", 93, 94, 0, 8, items=[]),
+        CCItem("?", 94, 95, 0, 8, items=[]),
+        CCItem("?", 95, 96, 0, 8, items=[]),
+        CCItem("Collision mitigation by braking", 96, 97, 0, 8, items=[]),
+        CCItem("Forward Collision Warning", 97, 98, 0, 8, items=[]),
+        CCItem("Lane departure warning", 98, 99, 0, 8, items=[]),
+        CCItem("Park assist camera", 99, 100, 0, 8, items=[]),
+        CCItem("?", 100, 101, 0, 8, items=[]),
+        CCItem("Tire pressure monitoring system", 101, 102, 0, 8, items=[]),
+        CCItem("Oil level sensor", 102, 103, 0, 8, items=[]),
+        CCItem("Roll stability control", 103, 104, 0, 8, items=[]),
+        CCItem("?", 104, 105, 0, 8, items=[]),
+        CCItem("Wheel brakes type rear", 105, 106, 0, 8, items=[]),
+        CCItem("Emergency brake lamp", 106, 107, 0, 8, items=[]),
+        CCItem("?", 107, 108, 0, 8, items=[]),
+        CCItem("Roof Hatch", 108, 109, 0, 8, items=[]),
+        CCItem("Power rear windows", 109, 110, 0, 8, items=[]),
+        CCItem("Frequency band and step", 110, 111, 0, 8, items=[]),
+        CCItem("Trim level", 111, 112, 0, 8, items=[]),
+        CCItem("In Car Entertainment", 112, 113, 0, 8, items=[]),
+        CCItem("Voice Control", 113, 114, 0, 8, items=[
+            [0x01, "Without speech recognition"],
+            [0x02, "Basic Speech recognition"]
+        ]),
+        CCItem("?", 114, 115, 0, 8, items=[]),
+        CCItem("Speed lock", 115, 116, 0, 8, items=[]),
+        CCItem("?", 116, 117, 0, 8, items=[]),
+        CCItem("Speedometer", 117, 118, 0, 8, items=[
+            [0x01, "KPH"],
+            [0x02, "MPH"]
+        ]),
+        CCItem("?", 118, 119, 0, 8, items=[]),
+        CCItem("?", 119, 120, 0, 8, items=[]),
+        CCItem("Centre speaker, dashboard", 120, 121, 0, 8, items=[]),
+        CCItem("?", 121, 122, 0, 8, items=[]),
+        CCItem("?", 122, 123, 0, 8, items=[]),
+        CCItem("Audio auxiliary input", 123, 124, 0, 8, items=[]),
+        CCItem("Audio player", 124, 125, 0, 8, items=[]),
+        CCItem("Satellite radio receiver", 125, 126, 0, 8, items=[]),
+        CCItem("?", 126, 127, 0, 8, items=[]),
+        CCItem("?", 127, 128, 0, 8, items=[]),
+        CCItem("?", 128, 129, 0, 8, items=[]),
+        CCItem("?", 129, 130, 0, 8, items=[]),
+        CCItem("PAM scan pattern", 130, 131, 0, 8, items=[]),
+        CCItem("Front passenger seatbelt reminder", 131, 132, 0, 8, items=[]),
+        CCItem("Driver knee bolster", 132, 133, 0, 8, items=[]),
+        CCItem("Side curtain airbags", 133, 134, 0, 8, items=[]),
+        CCItem("Airbag, driver side", 134, 135, 0, 8, items=[]),
+        CCItem("Front active seat belt retractor pretensioner", 135, 136, 0, 8, items=[]),
+        CCItem("Seat belt warning", 136, 137, 0, 8, items=[]),
+        CCItem("?", 137, 138, 0, 8, items=[]),
+        CCItem("?", 138, 139, 0, 8, items=[]),
+        CCItem("Rear opening", 139, 140, 0, 8, items=[]),
+        CCItem("?", 130, 141, 0, 8, items=[]),
+        CCItem("?", 141, 142, 0, 8, items=[]),
+        CCItem("?", 142, 143, 0, 8, items=[]),
+        CCItem("Rear wash wipe", 143, 144, 0, 8, items=[]),
+        CCItem("Power/Heated Mirrors", 144, 145, 0, 8, items=[]),
+        CCItem("Auto relocking", 145, 146, 0, 8, items=[]),
+        CCItem("?", 146, 147, 0, 8, items=[]),
+        CCItem("Audible mislock feedback", 147, 148, 0, 8, items=[]),
+        CCItem("?", 148, 149, 0, 8, items=[]),
+        CCItem("?", 149, 150, 0, 8, items=[]),
+        CCItem("Air quality sensor", 140, 151, 0, 8, items=[]),
+        CCItem("?", 151, 152, 0, 8, items=[]),
+        CCItem("?", 152, 153, 0, 8, items=[]),
+        CCItem("?", 153, 154, 0, 8, items=[]),
+        CCItem("Accessory USB unit", 154, 155, 0, 8, items=[]),
+        CCItem("?", 155, 156, 0, 8, items=[]),
+        CCItem("?", 156, 157, 0, 8, items=[]),
+        CCItem("Bluetooth handsfree", 157, 158, 0, 8, items=[]),
+        CCItem("Occupant weight sensor (OWS)", 158, 159, 0, 8, items=[]),
+        CCItem("Rear belt detection", 159, 160, 0, 8, items=[]),
+        CCItem("?", 150, 161, 0, 8, items=[]),
+        CCItem("Adaptive load limiter front", 161, 162, 0, 8, items=[]),
+        CCItem("Seat track sensor", 162, 163, 0, 8, items=[]),
+        CCItem("?", 163, 164, 0, 8, items=[]),
+        CCItem("?", 164, 165, 0, 8, items=[]),
+        CCItem("?", 165, 166, 0, 8, items=[]),
+        CCItem("?", 166, 167, 0, 8, items=[]),
+        CCItem("?", 167, 168, 0, 8, items=[]),
+        CCItem("?", 168, 169, 0, 8, items=[]),
+        CCItem("?", 169, 170, 0, 8, items=[]),
+        CCItem("?", 160, 171, 0, 8, items=[]),
+        CCItem("?", 171, 172, 0, 8, items=[]),
+        CCItem("Touchscreen", 172, 173, 0, 8, items=[]),
+        CCItem("?", 173, 174, 0, 8, items=[]),
+        CCItem("?", 174, 175, 0, 8, items=[]),
+        CCItem("?", 175, 176, 0, 8, items=[]),
+        CCItem("?", 176, 177, 0, 8, items=[]),
+        CCItem("Self opening boot / tailgate", 177, 178, 0, 8, items=[]),
+        CCItem("Shift indication", 178, 179, 0, 8, items=[]),
+        CCItem("?", 179, 180, 0, 8, items=[]),
+        CCItem("?", 170, 181, 0, 8, items=[]),
+        CCItem("?", 171, 182, 0, 8, items=[]),
+        CCItem("?", 182, 183, 0, 8, items=[]),
+        CCItem("Engine cooling fan performance", 183, 184, 0, 8, items=[]),
+        CCItem("Global Open/Close", 184, 185, 0, 8, items=[]),
+        CCItem("?", 185, 186, 0, 8, items=[]),
+        CCItem("Door remote control channel type", 186, 187, 0, 8, items=[]),
+        CCItem("Audio buttons on steering wheel", 187, 188, 0, 8, items=[]),
+        CCItem("?", 188, 189, 0, 8, items=[]),
+        CCItem("?", 189, 190, 0, 8, items=[]),
+        CCItem("?", 190, 191, 0, 8, items=[]),
+        CCItem("Driver Impairment Monitor", 191, 192, 0, 8, items=[]),
+        CCItem("City Safety", 192, 193, 0, 8, items=[]),
+        CCItem("?", 193, 194, 0, 8, items=[]),
+        CCItem("Mirror Mounted Turn Signal Indicator", 194, 195, 0, 8, items=[]),
+        CCItem("Fuel Pump", 195, 196, 0, 8, items=[]),
+        CCItem("Taillamps", 196, 197, 0, 8, items=[]),
+        CCItem("?", 197, 198, 0, 8, items=[]),
+        CCItem("?", 198, 199, 0, 8, items=[]),
+        CCItem("Trailer Stability Assist", 199, 200, 0, 8, items=[]),
+        CCItem("?", 200, 201, 0, 8, items=[]),
+        CCItem("Reverse Gear Chime", 201, 202, 0, 8, items=[]),
+        CCItem("?", 202, 203, 0, 8, items=[]),
+        CCItem("Wheel Speed Sensor Type", 203, 204, 0, 8, items=[]),
+        CCItem("?", 204, 205, 0, 8, items=[]),
+        CCItem("?", 205, 206, 0, 8, items=[]),
+        CCItem("?", 206, 207, 0, 8, items=[]),
+        CCItem("?", 207, 208, 0, 8, items=[]),
+        CCItem("Steering Column Lock", 208, 209, 0, 8, items=[]),
+        CCItem("?", 209, 210, 0, 8, items=[]),
+        CCItem("Battery", 210, 211, 0, 8, items=[]),
+        CCItem("Battery Monitor Sensor", 211, 212, 0, 8, items=[]),
+        CCItem("?", 212, 213, 0, 8, items=[]),
+        CCItem("?", 213, 214, 0, 8, items=[]),
+        CCItem("Integrated Control Panel", 214, 215, 0, 8, items=[]),
+        CCItem("?", 215, 216, 0, 8, items=[]),
+        CCItem("Aesthetic Lighting", 216, 217, 0, 8, items=[]),
+        CCItem("?", 217, 218, 0, 8, items=[]),
+        CCItem("HillLaunch Assist", 218, 219, 0, 8, items=[]),
+        CCItem("?", 219, 220, 0, 8, items=[]),
+        CCItem("?", 220, 221, 0, 8, items=[]),
+        CCItem("?", 221, 222, 0, 8, items=[]),
+        CCItem("Start Stop", 222, 223, 0, 8, items=[]),
+        CCItem("?", 223, 224, 0, 8, items=[]),
+        CCItem("Adjustable Speed Limiter", 224, 225, 0, 8, items=[]),
+        CCItem("?", 225, 226, 0, 8, items=[]),
+        CCItem("Lock Status Indication Config", 226, 227, 0, 8, items=[]),
+        CCItem("?", 227, 228, 0, 8, items=[]),
+        CCItem("?", 228, 229, 0, 8, items=[]),
+        CCItem("?", 229, 230, 0, 8, items=[]),
+        CCItem("?", 230, 231, 0, 8, items=[]),
+        CCItem("Fuel Tank Table", 231, 232, 0, 8, items=[]),
+        CCItem("?", 232, 233, 0, 8, items=[]),
+        CCItem("?", 233, 234, 0, 8, items=[]),
+        CCItem("?", 234, 235, 0, 8, items=[]),
+        CCItem("Key code", 235, 236, 0, 8, items=[]),
+        CCItem("Steering Gears C Factor", 236, 237, 0, 8, items=[]),
+        CCItem("?", 237, 238, 0, 8, items=[]),
+        CCItem("?", 238, 239, 0, 8, items=[]),
+        CCItem("My Key", 239, 240, 0, 8, items=[]),
+        CCItem("Traffic Sign Recognition", 240, 241, 0, 8, items=[]),
+        CCItem("?", 241, 242, 0, 8, items=[]),
+        CCItem("Remote Start", 242, 243, 0, 8, items=[]),
+        CCItem("Shifter Type", 243, 244, 0, 8, items=[]),
+        CCItem("?", 244, 245, 0, 8, items=[]),
+        CCItem("?", 245, 246, 0, 8, items=[]),
+        CCItem("?", 246, 247, 0, 8, items=[]),
+        CCItem("?", 247, 248, 0, 8, items=[]),
+        CCItem("?", 248, 249, 0, 8, items=[]),
+        CCItem("?", 249, 250, 0, 8, items=[]),
+        CCItem("?", 250, 251, 0, 8, items=[]),
+        CCItem("?", 251, 252, 0, 8, items=[]),
+        CCItem("?", 252, 253, 0, 8, items=[]),
     ]
