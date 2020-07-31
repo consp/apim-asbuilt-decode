@@ -261,10 +261,10 @@ class Fields(object):
             'items': 2 ,
             'type': 'mask',
             '0': 'Do not log missing DSP Messages',
-            '1': 'Log missing DSP Messages (When configured for Smart DSP and Lincoln then enable THX Deep Note)',
+            '1': 'Enable, Log missing DSP Messages (When configured for Smart DSP and Lincoln then enable THX Deep Note)',
         },
         {
-            'name': 'AAM',
+            'name': 'AAM (Module is related to Smart DSP)',
             'index': 2,
             'byte': 0,
             'bit': 1,
@@ -272,7 +272,7 @@ class Fields(object):
             'items': 2 ,
             'type': 'mask',
             '0': 'Do not log missing AAM messages',
-            '1': 'Log Missing AAM messages (Send speaker walkaround request to ACM)',
+            '1': 'Enable, Log Missing AAM messages (Send speaker walkaround request to ACM)',
         },
         {
             'name': 'SDARS',
@@ -283,7 +283,7 @@ class Fields(object):
             'items': 2 ,
             'type': 'mask',
             '0': 'Do not log missing SDARS (ACM) message',
-            '1': 'Log Missing SDARS (ACM) message',
+            '1': 'Enable, Log Missing SDARS (ACM) message',
         },
         {
             'name': 'RSEM',
@@ -294,7 +294,7 @@ class Fields(object):
             'items': 2 ,
             'type': 'mask',
             '0': 'Do not log missing RSEM messages',
-            '1': 'Log Missing RSEM messages',
+            '1': 'Enable, Log Missing RSEM messages',
         },
         {
             'name': 'PDC HMI',
@@ -1739,7 +1739,7 @@ class Fields(object):
 
     de03 = [
         {
-            'name': 'Day night palette delay (seconds)',
+            'name': 'Day night palette delay (seconds, this setting might have additional options starting 3.2)',
             'index': 134,
             'byte': 0,
             'bit': 0,
@@ -1753,7 +1753,7 @@ class Fields(object):
             'max': 255,
         },
         {
-            'name': 'Audio Player',
+            'name': 'Audio Player (this setting might have additional options starting 3.2)',
             'index': 135,
             'byte': 0,
             'bit': 4,
@@ -1776,15 +1776,15 @@ class Fields(object):
             'unit': 'index'
         },
         {
-            'name': 'Climate Domain (will also disable climate VR)',
+            'name': 'Climate Domain (disable climate VR on Sync 3.4, ignores legacy climate in 3.4)',
             'index': 137,
             'byte': 3,
             'bit': 0,
             'size': 1,
             'items': 2 ,
             'type': 'mask',
-            '0': 'ON - Automatic',
-            '1': 'OFF - Manual',
+            '0': 'ON - Automatic (show domain)',
+            '1': 'OFF - Manual (hide domain)',
         },
         {
             'name': 'Fan Repeater',
