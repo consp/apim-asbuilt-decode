@@ -42,7 +42,7 @@ GUI: python3 src/apim.py or run the excutable. You can open a file, change stuff
 
 Command line options: Either one or two files need to be present
 ```
-> python3 src/apim.py YOURVIHERE.ab forscanfile.abt
+> python3 src/apim.py YOURVINHERE.ab forscanfile.abt
 Loading YOURVINHERE.ab
 Loading Ford XML file
 Loaded 7 blocks, 57 bytes
