@@ -1,3 +1,5 @@
+import json
+
 class JumpTables(object):
     BVNI = [ # correct as from 5U5T
             "SYNC",
@@ -3813,7 +3815,7 @@ class CCItem():
 
     def decode(self, value, other=None, other2=None):
         try:
-            s = "[ %3d ] %s:%s" % (self.index, self.name, (40 - len(self.name)) * " ")
+            s = "[ %3d ] %s:%s" % (self.index, self.name, (48 - len(self.name)) * " ")
             v = value[self.byte]
             d = (v >> self.bit) & ((2**self.size) - 1)
             if other is None:
@@ -3830,18 +3832,18 @@ class CCItem():
                     v3 = other2[self.byte]
                     d3 = (v3 >> self.bit) & ((2**self.size) - 1)
                     if self.type == CCTypes.ENUM:
-                        s = s + "%-32s [%02X] - [%02X] %32s - %-32s [%02X]" % (self.itemlist[d], d, d2, self.itemlist[d2] if d != d2 else "--",  self.itemlist[d3] if d != d3 else "--", d3)
+                        s = s + "%-56s [%02X] - [%02X] %56s - %-56s [%02X]" % (self.itemlist[d], d, d2, self.itemlist[d2] if d != d2 else "--",  self.itemlist[d3] if d != d3 else "--", d3)
                     elif self.type == CCTypes.VALUE:
-                        s = s + "                                  %02X  -  %02X                                  - %02X" % (d, d2, d3)
+                        s = s + "                                                          %02X  -  %02X                                                           -                                                           %02X" % (d, d2, d3)
                     elif self.type == CCTypes.FLAG:
                         s = s + "%02X %s" % (d, "True" if d else "False")
                     else:
                         s = s + "???"
                 else:
                     if self.type == CCTypes.ENUM:
-                        s = s + "%-32s [%02X] - [%02X] %32s" % (self.itemlist[d], d, d2, self.itemlist[d2] if d != d2 else "--")
+                        s = s + "%-56s [%02X] - [%02X] %56s" % (self.itemlist[d], d, d2, self.itemlist[d2] if d != d2 else "--")
                     elif self.type == CCTypes.VALUE:
-                        s = s + "                                  %02X  -  %02X" % (d, d2)
+                        s = s + "                                                          %02X  -  %02X" % (d, d2)
                     elif self.type == CCTypes.FLAG:
                         s = s + "%02X %s" % (d, "True" if d else "False")
                     else:
@@ -3854,7 +3856,31 @@ class CCItem():
 
 
 class CentralConfiguration:
-    FIESTA = [
+    FIESTA = None
+
+    def __init__(self, fiesta=None):
+        if fiesta is not None:
+            self.FIESTA = []
+            with open(fiesta, "r") as f:
+                jsondata = f.read()
+                for key, item in json.loads(jsondata).items():
+                    print(item)
+                    t = CCTypes.ENUM
+                    o = []
+                    if len(item['options']) > 0:
+                        for option in item['options']:
+                            o.append([option['value'], option['name']])
+                    else:
+                        t = CCTypes.VALUE
+
+                    o.sort(key=lambda i: i[0])
+                    self.FIESTA.append(CCItem(item['name'].replace("PARAM_EUCD_CCF_", ""), item['start'], item['stop'], 0, 8, items=o, type=t))
+                self.FIESTA.sort(key=lambda i: i.index)
+        else:
+            self.FIESTA = self.OLD
+
+
+    OLD = [
         CCItem("Checksum", 0, 1, 0, 8, items=[], type=CCTypes.VALUE),
         CCItem("Vehicle Type", 1, 2, 0, 8, items=[
             [0x17, "Ford Fiesta"],
