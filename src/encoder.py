@@ -214,7 +214,7 @@ class HmiData(object):
         marker1 = ">>" if ab2 is None else "1>"
         marker2 = "" if ab2 is None else "2>"
 
-        string = "#   -bits-loc- %-96s - Field      Location     Msk&Val = Res\n" % ("Name")
+        string = "#   -bits-loc- %-76s - Field      Location     Msk&Val = Res\n" % ("Name")
         for i in range(self.size()):
             mask = (2**((self.bit(i)+self.bits(i) - self.bit(i)) - 1)) << (7-((self.bit(i) + self.bits(i) - 1) % 8))
             value = int.from_bytes(ab2.bytes(self.bit(i), self.bit(i)+self.bits(i)), byteorder='big') if ab2 is not None else None
@@ -223,7 +223,7 @@ class HmiData(object):
                 self.bits(i),
                 self.bit(i),
                 self.name(i),
-                "." * (98 - len(self.name(i))),
+                "." * (78 - len(self.name(i))),
                 self.calc_field(ab1, i),
                 "vs %02X & %02X = %02X" % (value, mask, value & mask) if value is not None else ""
                 )
@@ -534,7 +534,7 @@ class ItemEncoder(object):
             return "Block %d not present in %s\n" % (block, "%s and %s" % (ab1.filename, ab2.filename) if not ab1.hasblock(block) and ab2 is not None and not ab2.hasblock(block) else ab1.filename if not ab1.hasblock(block) else ab2.filename)
         string = "Block %d (7D0-%02X or DE%02X)\n" % (block, block, block - 1)
         if block in [1, 2, 3, 4, 6, 8, 9]:
-            string = string + "#%s%-96s  - Field     Loc Byte     Loc bit  Val1 %s\n" % ("   - bit - loc - " if DEBUG else "", "Name", "Val2" if ab2 is not None else "")
+            string = string + "#%s%-76s  - Field     Loc Byte     Loc bit  Val1 %s\n" % ("   - bit - loc - " if DEBUG else "", "Name", "Val2" if ab2 is not None else "")
         else:
             string = string + "Block contains multiplier/offset values:\n"
 
@@ -575,7 +575,7 @@ class ItemEncoder(object):
                     string = string + "%s%-s: %s %s %s %s\n" % (
                                 "%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
-                                "." * (98 - len(item['name'])),
+                                "." * (78 - len(item['name'])),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
                                 bitmask,
                                 "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
@@ -593,14 +593,14 @@ class ItemEncoder(object):
                     letterstring = " %02X: %s %s" % (value1, chr(value1), "vs %02X: %s" % (value2, chr(value2)) if value2 is not None else "")
                     string = string + "%s%-s: %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
-                                letterstring + "." * (98 - len(item['name']) - len(letterstring)),
+                                letterstring + "." * (78 - len(item['name']) - len(letterstring)),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
                                 "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                             )
                 elif item['type'] == 'table':
                     string = string + "%s%-s: %s %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
                                 item['name'],
-                                "." * (98 - len(item['name'])),
+                                "." * (78 - len(item['name'])),
                                 ab1.mask_string(bitloc, bitloc + item['size']),
                                 bitmask,
                                 "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
