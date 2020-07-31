@@ -42,42 +42,42 @@ GUI: python3 src/apim.py or run the excutable. You can open a file, change stuff
 
 Command line options: Either one or two files need to be present
 ```
-> python3 src/apim.py YOURVINHERE.ab filename.abt 
-Loading ../YOURVINHERE.ab
+> python3 src/apim.py YOURVIHERE.ab forscanfile.abt
+Loading YOURVINHERE.ab
 Loading Ford XML file
-Loaded 9 blocks, 87 bytes
-Loading ../filename.abt
+Loaded 7 blocks, 57 bytes
+Loading forscanfile.abt
 Forscan ABT format
 New forscan format
-Loaded 7 blocks, 57 bytes
+Loaded 8 blocks, 67 bytes
 Block 1 (7D0-01 or DE00)
-#Name                                                                                              - Field      Location     Val&Msk  = Res
-Smart DSP: ......................................................................................... 7D0-01-01 Xnnn nnnn nn AA & 80 = 80 vs 00 & 80 = 00
-        2> 00:	Do not log missing DSP Messages
-     1>    01:	Log missing DSP Messages (When configured for Smart DSP and Lincoln then enable THX Deep Note)
-AAM: ............................................................................................... 7D0-01-01 Xnnn nnnn nn AA & 40 = 00 vs 00 & 40 = 00
-     1> 2> 00:	Do not log missing AAM messages
-           01:	Log Missing AAM messages (Send speaker walkaround request to ACM)
-SDARS: ............................................................................................. 7D0-01-01 Xnnn nnnn nn AA & 20 = 20 vs 00 & 20 = 00
-        2> 00:	Do not log missing SDARS (ACM) message
-     1>    01:	Log Missing SDARS (ACM) message
-RSEM: .............................................................................................. 7D0-01-01 Xnnn nnnn nn AA & 10 = 00 vs 00 & 10 = 00
-     1> 2> 00:	Do not log missing RSEM messages
-           01:	Log Missing RSEM messages
-PDC HMI: ........................................................................................... 7D0-01-01 nXnn nnnn nn AA & 08 = 08 vs 01 & 08 = 00
-           00:	Off
-     1> 2> 01:	On
-Rear Camera: ....................................................................................... 7D0-01-01 nXnn nnnn nn AA & 06 = 02 vs 00 & 06 = 00
-        2> 00:	RVC Not Present
-     1>    01:	RVC Present
-           02:	Reserved
-           03:	Reserved
-Illumination: ...................................................................................... 7D0-01-01 nXnn nnnn nn AA & 01 = 00 vs 01 & 01 = 01
-     1>    00:	FNA Strategy
-        2> 01:	FoE Strategy
-Extended Play: ..................................................................................... 7D0-01-01 nnXn nnnn nn 0A & 80 = 00 vs 00 & 80 = 00
-     1> 2> 00:	On
-           01:	Off
+#Name                                                                          - Field     Loc Byte     Loc bit  Val1 Val2
+Smart DSP: ..................................................................... 7D0-01-01 Xnnn nnnn nn 1.......  88   08
+        2> 00:  Do not log missing DSP Messages
+     1>    80:  Enable, Log missing DSP Messages (When configured for Smart DSP and Lincoln then enable THX Deep Note)
+AAM (Module is related to Smart DSP): .......................................... 7D0-01-01 Xnnn nnnn nn .0......  88   08
+     1> 2> 00:  Do not log missing AAM messages
+           40:  Enable, Log Missing AAM messages (Send speaker walkaround request to ACM)
+SDARS: ......................................................................... 7D0-01-01 Xnnn nnnn nn ..0.....  88   08
+     1> 2> 00:  Do not log missing SDARS (ACM) message
+           20:  Enable, Log Missing SDARS (ACM) message
+RSEM: .......................................................................... 7D0-01-01 Xnnn nnnn nn ...0....  88   08
+     1> 2> 00:  Do not log missing RSEM messages
+           10:  Enable, Log Missing RSEM messages
+PDC HMI: ....................................................................... 7D0-01-01 nXnn nnnn nn ....1...  88   08
+           00:  Off
+     1> 2> 08:  On
+Rear Camera: ................................................................... 7D0-01-01 nXnn nnnn nn .....00.  88   08
+     1> 2> 00:  RVC Not Present
+           02:  RVC Present
+           04:  Reserved
+           06:  Reserved
+Illumination: .................................................................. 7D0-01-01 nXnn nnnn nn .......0  88   08
+     1> 2> 00:  FNA Strategy
+           01:  FoE Strategy
+Extended Play: ................................................................. 7D0-01-01 nnXn nnnn nn 0.......  6A   68
+     1> 2> 00:  On
+           80:  Off 
 ...
 ```
 
