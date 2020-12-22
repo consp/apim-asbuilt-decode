@@ -186,7 +186,7 @@ class QtApp(object):
                 text.setReadOnly(True)
                 if (bt % 5) == 0:
                     label = QLabel()
-                    label.setText("7D01-%02X-%02X" % (x, (bt//5)+1))
+                    label.setText("7D0-%02X-%02X" % (x, (bt//5)+1))
                     label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
                     blockview_layout.addWidget(label, stretch=0)
                     blockview_layout.addWidget(text, stretch=1)
