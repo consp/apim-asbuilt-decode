@@ -1,29 +1,24 @@
 # Ford APIM AsBuilt decoder tool
 ## Current state
-Latest "Stable" release version: [1.1](https://github.com/consp/apim-asbuilt-decode/releases)
+Latest "Stable" release version: [1.1b](https://github.com/consp/apim-asbuilt-decode/releases)
 ## Intro
-This repository is meant for users who want to edit their values of the AsBuilt data of the Ford Sync 3 APIM.
-
-There are several options to get the information in this repository though the following give problems:
-
-- The debug menu on the APIM module: Offsets the data incorrectly somewhere after option 30 (verified in program code) this is the cause of some confusion in some sheets containing the decoded data already on the internet
-- Trail and error (used to verify the data)
-- The source, e.g. the binary data of the files present in the updates packages
-
-Fortunately Ford included a lot of debugging strings in their code! This allowed me to debug all the data for my device and some other options for the My19 and My20 devices. There are however no lookup tables for those options and not all are debugged in the code so not everything is included.
+This repository is meant for users who want to edit their values of the AsBuilt data of the Ford Sync 3 APIM and do not have a tool which has all information built in. The data has been collected from code (extracting debug information from the QNX applications) and other peoples findings on fora.
 
 There are in total 134 "standard" options in 7D0-01 to 7D0-04 (DE00-03). There are more options in 7D0-05 to 07 (DE04-06) which are mostly offset/multiplier values.
 
-Please note that some settings change quite a lot. Most radio and CGEA/C1MCA settings change quite a lot internally. There are at least 177 calibration options in the 3.0 release of Sync 3 and 295 in Sync 3.4. 
+Please note that some settings change quite a lot. Most radio and CGEA/C1MCA settings change quite a lot internally. There are at least 177 calibration options in the 3.0 release of Sync 3 and 295 in Sync 3.4.
+
+As with all DIY tools: YMMV and you do everything at your own risk.
 
 ## Acknowledgements
 
-~~Since I do not own a gen 4 module (Sync 3.3 and up) it is imposible to test things for me.~~ Not all Gen4 stuff works on my module as the car it is in does not support it. I got most of the info from DE07/08 (7D0-08/09) from code but information was missing, like detailed names and some exact bit locations especially for 7D0-08. The data was corrected by the F150 ASBuilt sheet from the F150Forums which confirmed the data present in code. I'm not completely sure who is/are the author(s), leave a pull request if you want to add you name here. The code from the 3.4 update floating around on the intenet contains a lot of the 08/09 block options and I used those to verify most options.
+Not all Gen4 stuff works on my module as the car it is in does not support it. I got most of the info from DE07/08 (7D0-08/09) from code but information was missing, like detailed names and some exact bit locations especially for 7D0-08. The data was corrected by the F150 ASBuilt sheet from the F150Forums which confirmed the data present in code. I'm not completely sure who is/are the author(s), leave a pull request if you want to add you name here. The code from the 3.4 update floating around on the intenet contains a lot of the 08/09 block options and I used those to verify most options.
 
 
 ## Inconsistencies and known issues
-The following is incorrect or missing in the decode program:
-- The bluetooth audio profile does something but I haven't figured out what yet. It looks like a lookup table change but I'm not sure.
+
+- The bluetooth audio profile does something but I have no clue what
+- After opening some files or misformed file the application might crash
 
 ## Features
 - Dumps your abt binary data into something 'somewhat' readable
@@ -31,8 +26,7 @@ The following is incorrect or missing in the decode program:
 - Uses GUI to change options more easy and lets you see the results in the files if you change them.
 
 ## Todo
-- ~~Add save option to fix the checksums~~ See GUI and ```--save``` option
-- ~~Add 7D0-08 (My19) and 7D0-09 (My20) decoding formats~~ Most has been confirmed by other people figuring things out on their own and from the 3.4 update.
+- Add newer options as soon as they are found
 
 ## Usage and requirements
 Requires the following:
@@ -40,7 +34,9 @@ Requires the following:
 - Qt5 libraries and PyQt5. x64 windows executables have everything built in, 32bit require meddeling with pyqt5.
 - As built file(s) in either Ford XML format (.ab) or ForScan dump format (.abt) in new or old style or a UCDS xml file.
 
-GUI: python3 src/apim.py or run the excutable. You can open a file, change stuff and save it
+GUI: ```python3 src/apim.py``` or run the excutable. You can open a file, change stuff and save it
+![open image](/img/open.png?raw=true)
+![main menu](/img/main.png?raw=true)
 
 Command line options: Either one or two files need to be present
 ```
