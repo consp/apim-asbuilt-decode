@@ -450,7 +450,7 @@ class ItemEncoder(object):
     def __init__(self):
         self.items = [Fields.block(block) for block in range(1, 10)]
 
-    def QtItemList(self, block, asbuilt, bitfields):
+    def QtItemList(self, block, asbuilt, bitfields, themechange):
         qtitems = []
         prevbyte = -1
         for item in Fields.block(block):
@@ -507,6 +507,8 @@ class ItemEncoder(object):
                 option.setMaximumWidth(400)
                 option.setCurrentIndex(value)
                 option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+            if 'theme' in item:
+                option.currentIndexChanged.connect(partial(themechange))
             layout.addWidget(label)
             layout.addWidget(option)
             if unit is not None:

@@ -6,7 +6,7 @@ if sys.version_info[1] < 4:
     raise Exception("Must be using Python 3.4 or up")
 # QT Imports
 try:
-    from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGroupBox, QMessageBox, QComboBox, QScrollArea, QSizePolicy, QTabWidget, QLineEdit
+    from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QHBoxLayout, QLabel, QFileDialog, QGroupBox, QMessageBox, QComboBox, QScrollArea, QSizePolicy, QTabWidget, QLineEdit, QStatusBar
     from PyQt5.QtGui import QDoubleValidator, QRegExpValidator
     from PyQt5.QtCore import QRegExp, Qt
     from functools import partial
@@ -19,7 +19,7 @@ from binascii import unhexlify, hexlify
 # local imports
 from asbuilt import AsBuilt
 from encoder import print_bits_known_de07_08, ItemEncoder, print_duplicates
-from statics import JumpTables, Fields
+from statics import JumpTables, Fields, ThemeConfig
 # global imports
 import argparse
 
@@ -143,11 +143,15 @@ class QtApp(object):
         self.button_save_as = QPushButton("Save as ...") if self.button_save_as is None else self.button_save_as
         self.button_save_as.clicked.connect(self.save_file_as)
         self.button_save.clicked.connect(self.save)
+        self.syncversion = QComboBox()
+        self.syncversion.addItems(["3.0-3.2", "3.4"])
+        self.syncversion.setCurrentIndex(1)
 
         self.button_group_layout.addWidget(self.button_open)
         self.button_group_layout.addWidget(self.button_save)
         self.button_group_layout.addWidget(self.button_save_as)
         self.button_group_layout.addWidget(self.button_exit)
+        self.button_group_layout.addWidget(self.syncversion)
         self.button_group.setLayout(self.button_group_layout)
 
         ## Block group
@@ -231,7 +235,7 @@ class QtApp(object):
             setup_layout.addWidget(scroll_area)
             setup.setLayout(setup_layout)
 
-            items = self.encoder.QtItemList(x, self.asbuilt, self.textblocks[x-1])
+            items = self.encoder.QtItemList(x, self.asbuilt, self.textblocks[x-1], self.themechange)
             for item in items:
                 block_items_layout.addLayout(item)
             self.tab.append(setup)
@@ -249,7 +253,25 @@ class QtApp(object):
         self.picker_window.setLayout(self.picker_layout)
         self.current_window = self.picker_window
         #self.picker_window.setSizePolicy(QSizePolicy.Expanding)
+        self.statusBar = QStatusBar()
+        self.picker_layout.addWidget(self.statusBar)
+        self.statusBar.showMessage("")
         self.picker_window.show()
+
+    def themechange(self):
+
+        animation = int(self.textblocks[1][2].text(), 16)
+        theme = int(self.textblocks[2][2].text(), 16)
+        brand = (int(self.textblocks[0][5].text(), 16) & 0b11100000) >> 5
+
+        #print(theme, animation, brand, self.syncversion.currentText())
+        matches = ThemeConfig.validate(brand, theme, animation, version=self.syncversion.currentText())
+
+        message = "No themes found matching configuration!" if len(matches) == 0 else matches[0] if len(matches) == 1 else "Found %d themes: %s" % (len(matches), "".join(matches))
+        self.statusBar.showMessage(message)
+        #print(matches)
+        #f = ThemeConfig.validate()
+
 
     def launch_qt(self):
         self.app = QApplication([])
@@ -262,6 +284,7 @@ class QtApp(object):
         self.button_open.clicked.connect(self.open_file)
         self.button_exit = QPushButton("Exit")
         self.button_exit.clicked.connect(sys.exit)
+
 
         self.main_layout.addWidget(self.button_open)
         self.main_layout.addWidget(self.button_exit)

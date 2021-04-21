@@ -658,9 +658,10 @@ class Fields(object):
             'items': 4 ,
             'type': 'mask',
             '0': 'Ford',
-            '1': 'Reserved (not used in 3.4)',
+            '1': 'Ford Timeless / Reserved (3.4)',
             '2': 'Lincoln',
             '3': 'Configurable Splash Screen (not used in 3.4)',
+            'theme': True,
         },
         {
             'name': 'Hybrid (HEV)',
@@ -1048,13 +1049,14 @@ class Fields(object):
             'type': 'ascii',
         },
         {
-            'name': 'Splash Screen, also sets some themes',
+            'name': 'Splash Screen / Startup Animation',
             'index': 72,
             'byte': 2,
             'bit': 0,
             'size': 8,
             'type': 'table',
             'table': '__SS',
+            'theme': True,
         },
         {
             'name': 'Vehicle Style',
@@ -1710,13 +1712,14 @@ class Fields(object):
             'table': '___V',
         },
         {
-            'name': 'Visual Design Variants',
+            'name': 'Visual Design Variants / Sync visual Theme',
             'index': 131,
             'byte': 2,
             'bit': 0,
             'size': 8,
             'type': 'table',
             'table': '_VDV',
+            'theme': True
         },
         {
             'name': 'Drive Type',
@@ -3774,6 +3777,230 @@ class Fields(object):
             '1': 'Supported',
         },
     ]
+
+class ThemeConfig():
+    # checks themeconfig
+    themes = [
+        "Ford Classic", #0
+        "Ford Timeless", #1
+        "Lincoln Classic", #2
+        "Lincoln Timeless", #3
+        "Ford GT (no longer used in 3.4)" #4
+        "?", #5
+        "?",
+        "10L Theme", #7
+        "10P Theme" #8
+    ]
+
+    config_3_4 = {
+        "ford-my20":
+            {
+                "brand": 0,
+                "theme": 0,
+                "animation": -1,
+                "comment": "Maps to Classic theme but animation might not work"
+            },
+        "ford-my20-2":
+            {
+                "brand": 0,
+                "theme": 0,
+                "animation": 8,
+                "comment": "Maps to Classic theme but animation is Vignale Classis"
+            },
+        "ford-my20-3":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": -1,
+                "comment": "Maps to Classic theme but animation might not work"
+            },
+        "ford-raptor":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 5,
+                "comment": None
+            },
+        "ford-mustang":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 6,
+                "comment": "Usethemeid is set to 0"
+            },
+        "ford-evo":
+            {
+                "brand": 0,
+                "theme": 0,
+                "animation": 16,
+                "comment": None
+            },
+        "ford-shelby":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 7,
+                "comment": "Usethemeid is set to 0"
+            },
+        "ford-vignale":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 8,
+                "comment": "Usethemeid is set to 0"
+            },
+        "ford-shelbyR":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 9,
+                "comment": "Usethemeid is set to 0"
+            },
+        "ford-st":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 11,
+            },
+        "ford-rs":
+            {
+                "brand": 0,
+                "theme": 1,
+                "animation": 12,
+                "comment": "Usethemeid is set to 0"
+            },
+        "ford-my20-former-gt-theme":
+            {
+                "brand": 0,
+                "theme": 4,
+                "animation": 13,
+                "comment": "Some versions do not function with this theme!",
+                "warning": True
+            },
+        "lincoln-U520":
+            {
+                "brand": 2,
+                "theme": 2,
+                "animation": 20,
+                "comment": "Marked as obsolete"
+            },
+        "ford-10p-my20":
+            {
+                "brand": 0,
+                "theme": 8,
+                "animation": -1,
+                "comment": "Animation change might not work"
+            },
+        "lincoln-my20":
+            {
+                "brand": 2,
+                "theme": 2,
+                "animation": -1,
+                "comment": "Marked as obsolete, animation might not work"
+            },
+        "lincoln-blacklabel":
+            {
+                "brand": 2,
+                "theme": 2,
+                "animation": 3,
+                "comment": "Usethemeid is set to 3"
+            },
+        "lincoln-presidential":
+            {
+                "brand": 2,
+                "theme": 2,
+                "animation": 4,
+                "comment": "Usethemeid is set to 3"
+            },
+        "lincoln-my20":
+            {
+                "brand": 2,
+                "theme": 3,
+                "animation": -1,
+                "comment": "Animation might not work, used to be lincoln-next"
+            },
+        "lincoln-my20-2":
+            {
+                "brand": 2,
+                "theme": 3,
+                "animation": 3,
+                "comment": "Obsolete is set used to be D544-blacklabel"
+            },
+        "lincoln-continental":
+            {
+                "brand": 2,
+                "theme": 3,
+                "animation": 14,
+                "comment": None
+            },
+        "lincoln-10L-my20":
+            {
+                "brand": 2,
+                "theme": 7,
+                "animation": -1,
+                "comment": "Animation might not work"
+            },
+        "lincoln-U611":
+            {
+                "brand": 2,
+                "theme": 7,
+                "animation": 17,
+                "comment": None
+            },
+        "ford-10P-st":
+            {
+                "brand": 0,
+                "theme": 8,
+                "animation": 11,
+                "comment": None
+            },
+        "ford-U625":
+            {
+                "brand": 0,
+                "theme": 0,
+                "animation": 18,
+                "comment": None
+            },
+        "ford-10P-U625":
+            {
+                "brand": 0,
+                "theme": 8,
+                "animation": 18,
+                "comment": None
+            },
+        "lincoln-CX483":
+            {
+                "brand": 2,
+                "theme": 3,
+                "animation": 19,
+                "comment": None
+            },
+        "lincoln-U540":
+            {
+                "brand": 2,
+                "theme": 3,
+                "animation": 20,
+                "comment": None
+            },
+        "ford-CX430":
+            {
+                "brand": 0,
+                "theme": 0,
+                "animation": 23,
+                "comment": None
+            },
+    }
+
+    @classmethod
+    def validate(cls, brand, theme, animation, version="3.4"):
+        matches = []
+        if version == "3.4":
+            for k,v in cls.config_3_4.items():
+                if (v['brand'] == brand and v['theme'] == theme and v['animation'] == -1) or (v['brand'] == brand and v['theme'] == theme and v['animation'] == animation):
+                    matches.append("Found theme '%s'. %s" % (k, "" if v['comment'] is None else v['comment']))
+        else:
+            pass
+        return matches
 
 class CCTypes():
     ENUM = 1
