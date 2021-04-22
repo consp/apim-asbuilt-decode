@@ -1,6 +1,6 @@
 # Ford APIM AsBuilt decoder tool
 ## Current state
-Latest "Stable" release version: [1.1b](https://github.com/consp/apim-asbuilt-decode/releases)
+Latest "Stable" release version: [1.2](https://github.com/consp/apim-asbuilt-decode/releases)
 ## Intro
 This repository is meant for users who want to edit their values of the AsBuilt data of the Ford Sync 3 APIM and do not have a tool which has all information built in. The data has been collected from code (extracting debug information from the QNX applications) and other peoples findings on fora.
 
