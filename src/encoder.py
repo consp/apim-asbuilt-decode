@@ -3,7 +3,7 @@ from PyQt5.QtGui import QDoubleValidator, QRegExpValidator
 from PyQt5.QtCore import QRegExp, Qt
 
 from functools import partial
-from statics import JumpTables, Fields
+from statics import JumpTables, Fields, Fields_s4
 from asbuilt import AsBuilt
 
 
@@ -17,6 +17,8 @@ class HmiData(object):
     index_locations_high = [ # offset to DE04, includes DE05 and DE06 (7D0-05-07), format [byte start, byte end, bitvalue (first bit is 1)]
         [0, 2], [2, 2], [4, 2], [6, 1, 1], [6, 1, 2], [7, 1], [8, 1], [9, 1], [10, 1], [11, 1], [12, 2], [14, 2], [16, 2], [18, 1], [19, 1], [20, 1], [21, 2]
     ]
+
+    fields = None
 
     def output_stuff(self, ab):
         for x in range(1, 5):
@@ -313,7 +315,10 @@ class HmiData(object):
         string = "#%s%-96s   - Field      Location     Msk&Val = Res\n" % ("   -bits-loc  - " if DEBUG else "", "Name")
         if ab1.start_byte(8) == -1 and ab2.start_byte(8) == -1 or ab1.start_byte(8) == -1:
             return string
-        for item in Fields.de07:
+        fields = Fields
+        if ab1.s4:
+            fields = Fields_s4
+        for item in fields.de07:
             bit = 7 - item['bit']
             bitloc = ab1.start_bit(8) + ((item['byte']) * 8) + bit
             value1 = ab1.bit(bitloc, item['size'].bit_length())
@@ -345,7 +350,11 @@ class HmiData(object):
         string = "#   -bits-loc  - %-96s   - Field      Location     Msk&Val = Res\n" % ("Name")
         if ab1.start_byte(9) == -1 and ab2.start_byte(9) == -1 or ab1.start_byte(9) == -1:
             return string
-        for item in Fields.de08:
+        fields = Fields
+        if ab1.s4:
+            fields = Fields_s4
+
+        for item in fields.de08:
             bit = 7 - item['bit']
             bitloc = ab1.start_bit(9) + ((item['byte']) * 8) + bit
             value1 = ab1.bit(bitloc, item['size'].bit_length())
@@ -447,13 +456,20 @@ class ItemEncoder(object):
         else:
             return "xxxx xxxx NNcc + NNxx xxxx xxcc"
 
-    def __init__(self):
-        self.items = [Fields.block(block) for block in range(1, 10)]
+    def __init__(self, ab):
+        fields = Fields
+        if ab.s4:
+            fields = Fields_s4
+        self.items = [fields.block(block) for block in range(1, 10)]
 
     def QtItemList(self, block, asbuilt, bitfields, themechange):
         qtitems = []
         prevbyte = -1
-        for item in Fields.block(block):
+        fields = Fields
+        if asbuilt.s4:
+            fields = Fields_s4
+
+        for item in fields.block(block):
             if prevbyte != item['byte']:
                 layout = QHBoxLayout()
                 label = QLabel()
@@ -492,7 +508,11 @@ class ItemEncoder(object):
                 option.setCurrentIndex(value)
                 #print(item['byte'])
                 #print(bitfields)
-                option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+                try:
+                    option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+                except:
+                    print("out of range", item)
+                    
 
             elif item['type'] == 'ascii':
                 option = QLineEdit()
@@ -506,7 +526,11 @@ class ItemEncoder(object):
                     option.addItem(table[x], x)
                 option.setMaximumWidth(400)
                 option.setCurrentIndex(value)
-                option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+                try:
+                    option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
+                except:
+                    print("out of range", item)
+                    
             if 'theme' in item:
                 option.currentIndexChanged.connect(partial(themechange))
             layout.addWidget(label)
@@ -543,84 +567,84 @@ class ItemEncoder(object):
         # Parking Assistance: ................................................................................ 7D0-04-02 nnXX nnnn nn 01 & FF = 01
         # Front Track                                     7D0-05-01 XXXX nnnn nn 169B & FFFF = 169B     169B5.8 In (14.7    cm)                 Min: 0.0Max: 655.4
         try:
-            for item in self.items[block-1]:
-                bitloc = ab1.start_bit(block) + ((item['byte']) * 8) + item['bit']
-                mask = ((2**item['size'])-1) << (((7 - item['bit']) - (item['size'] - 1)) % 8)
-                value1 = ab1.bit(bitloc, item['size'])
-                value2 = ab2.bit(bitloc, item['size']) if ab2 is not None else None
-                byte1 = ab1.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8))
-                byte2 = ab2.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8)) if ab2 is not None else None
+            if len(self.items) >= block:
+                for item in self.items[block-1]:
+                    bitloc = ab1.start_bit(block) + ((item['byte']) * 8) + item['bit']
+                    mask = ((2**item['size'])-1) << (((7 - item['bit']) - (item['size'] - 1)) % 8)
+                    value1 = ab1.bit(bitloc, item['size'])
+                    value2 = ab2.bit(bitloc, item['size']) if ab2 is not None else None
+                    byte1 = ab1.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8))
+                    byte2 = ab2.int(ab1.start_byte(block) + item['byte'], 1 + ab1.start_byte(block) + item['byte'] + (item['size'] // 8) if item['size'] % 8 != 0 else ab1.start_byte(block) + item['byte'] + (item['size'] // 8)) if ab2 is not None else None
 
-                if mask < 256:
-                    bitmask = "{:.>8b}".format(mask)
-                    bitmask = bitmask.replace("0", ".")
-                    bitmask = bitmask[:bitmask.find("1")] + ("{:0%db}" % bitmask.count("1")).format(value1) + bitmask[bitmask.find("1")+bitmask.count("1"):]
-                else:
-                    bitmask = "too big "
-                if item['type'] == 'mul':
-                    # multiplier type
-                    value1 = (ab1.bit(bitloc, item['size']) * item['multiplier']) + item['offset']
-                    value2 = (ab2.bit(bitloc, item['size']) * item['multiplier']) + item['offset'] if ab2 is not None else None
-                    string = string + "%s%-48s%-44s\t%s%s\t%-16s%-16s\tMin: %0.1f\tMax: %0.1f\n" %(
-                        "%-3s - " % item['index'] if DEBUG else "",
-                        item['name'],
-                        ab1.mask_string(bitloc, bitloc + item['size']),
-                        "%04X" % byte1,
-                        " vs %04X" % byte2 if byte2 is not None else "",
-                        "%0.1f %s%s" % (value1, item['unit'] if item['unit'] is not 'unitless' else "", " (%0.1f cm)" % (value1 * 2.54) if item['unit'] == "In" else ""),
-                        " vs %0.1f %s%s" % (value2, item['unit'] if item['unit'] is not 'unitless' else "", " (%0.1f cm)" % (value2 * 2.54) if item['unit'] == "In" else "") if value2 is not None else "",
-                        item['min'],
-                        item['max']
-                    )
-                elif item['type'] == 'mask':
-                    # bitmask typebit = 7 - item['bit']
-                    string = string + "%s%-s: %s %s %s %s\n" % (
-                                "%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
-                                item['name'],
-                                "." * (78 - len(item['name'])),
-                                ab1.mask_string(bitloc, bitloc + item['size']),
-                                bitmask,
-                                "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
-                                #"vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
-                            )
-                    # for now assume enable // disable if one bit or multi bit strategy
-                    for x in range(0, item['items']):
-                        string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
-                                ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
-                                "2>" if ab2 is not None and x == value2 else "",
-                                "%02X" % (x << (((7 - item['bit']) - (item['size'] - 1)) % 8)),
-                                "" if '%d' % x not in item else item['%d' % x]
+                    if mask < 256:
+                        bitmask = "{:.>8b}".format(mask)
+                        bitmask = bitmask.replace("0", ".")
+                        bitmask = bitmask[:bitmask.find("1")] + ("{:0%db}" % bitmask.count("1")).format(value1) + bitmask[bitmask.find("1")+bitmask.count("1"):]
+                    else:
+                        bitmask = "too big "
+                    if item['type'] == 'mul':
+                        # multiplier type
+                        value1 = (ab1.bit(bitloc, item['size']) * item['multiplier']) + item['offset']
+                        value2 = (ab2.bit(bitloc, item['size']) * item['multiplier']) + item['offset'] if ab2 is not None else None
+                        string = string + "%s%-48s%-44s\t%s%s\t%-16s%-16s\tMin: %0.1f\tMax: %0.1f\n" %(
+                            "%-3s - " % item['index'] if DEBUG else "",
+                            item['name'],
+                            ab1.mask_string(bitloc, bitloc + item['size']),
+                            "%04X" % byte1,
+                            " vs %04X" % byte2 if byte2 is not None else "",
+                            "%0.1f %s%s" % (value1, item['unit'] if item['unit'] != 'unitless' else "", " (%0.1f cm)" % (value1 * 2.54) if item['unit'] == "In" else ""),
+                            " vs %0.1f %s%s" % (value2, item['unit'] if item['unit'] != 'unitless' else "", " (%0.1f cm)" % (value2 * 2.54) if item['unit'] == "In" else "") if value2 is not None else "",
+                            item['min'],
+                            item['max']
+                        )
+                    elif item['type'] == 'mask':
+                        # bitmask typebit = 7 - item['bit']
+                        string = string + "%s%-s: %s %s %s %s\n" % (
+                                    "%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
+                                    item['name'],
+                                    "." * (78 - len(item['name'])),
+                                    ab1.mask_string(bitloc, bitloc + item['size']),
+                                    bitmask,
+                                    "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
+                                    #"vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                                 )
-                elif item['type'] == 'ascii':
-                    letterstring = " %02X: %s %s" % (value1, chr(value1), "vs %02X: %s" % (value2, chr(value2)) if value2 is not None else "")
-                    string = string + "%s%-s: %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
-                                item['name'],
-                                letterstring + "." * (78 - len(item['name']) - len(letterstring)),
-                                ab1.mask_string(bitloc, bitloc + item['size']),
-                                "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
-                            )
-                elif item['type'] == 'table':
-                    string = string + "%s%-s: %s %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
-                                item['name'],
-                                "." * (78 - len(item['name'])),
-                                ab1.mask_string(bitloc, bitloc + item['size']),
-                                bitmask,
-                                "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
-                                #"vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
-                            )
-                    # for now assume enable // disable if one bit or multi bit strategy
-                    table = JumpTables.table(item['table'])
-                    for x in range(0, len(table)):
-                        string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
-                                ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
-                                "2>" if ab2 is not None and x == value2 else "",
-                                "%02X" % x,
-                                "" if len(table) < x not in item else table[x]
+                        # for now assume enable // disable if one bit or multi bit strategy
+                        for x in range(0, item['items']):
+                            string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
+                                    ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
+                                    "2>" if ab2 is not None and x == value2 else "",
+                                    "%02X" % (x << (((7 - item['bit']) - (item['size'] - 1)) % 8)),
+                                    "" if '%d' % x not in item else item['%d' % x]
+                                    )
+                    elif item['type'] == 'ascii':
+                        letterstring = " %02X: %s %s" % (value1, chr(value1), "vs %02X: %s" % (value2, chr(value2)) if value2 is not None else "")
+                        string = string + "%s%-s: %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
+                                    item['name'],
+                                    letterstring + "." * (78 - len(item['name']) - len(letterstring)),
+                                    ab1.mask_string(bitloc, bitloc + item['size']),
+                                    "vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
                                 )
-                    # table type
-                    pass
+                    elif item['type'] == 'table':
+                        string = string + "%s%-s: %s %s %s %s\n" % ("%-4s- %-3s - %-3s\t " % (item['index'], item['size'], bitloc) if DEBUG else "",
+                                    item['name'],
+                                    "." * (78 - len(item['name'])),
+                                    ab1.mask_string(bitloc, bitloc + item['size']),
+                                    bitmask,
+                                    "%02X" % byte1 if ab2 is None else " %02X   %02X" % (byte1, byte2)
+                                    #"vs %02X & %02X = %02X" % (value2, mask, value2 & mask) if value2 is not None else ""
+                                )
+                        # for now assume enable // disable if one bit or multi bit strategy
+                        table = JumpTables.table(item['table'])
+                        for x in range(0, len(table)):
+                            string = string + "%s     %2s %2s %s:\t%s\n" % ("\t\t" if DEBUG else "",
+                                    ">>" if ab2 is None and x == value1 else "1>" if x == value1 else "",
+                                    "2>" if ab2 is not None and x == value2 else "",
+                                    "%02X" % x,
+                                    "" if len(table) < x not in item else table[x]
+                                    )
+                        # table type
+                        pass
         except Exception as e:
-            print(item)
             print(block)
             raise e
         return string + "\n"
@@ -675,6 +699,14 @@ def print_duplicates():
         block = Fields.block(i)
         for item in block:
             if item['index'] in indexes:
-                print("Duplicate: %d", item['index'])
+                print("Duplicate: %d" % item['index'])
+            else:
+                indexes.append(item['index'])
+    indexes = []
+    for i in range(1, 11):
+        block = Fields_s4.block(i)
+        for item in block:
+            if item['index'] in indexes:
+                print("Duplicate: %d" % item['index'])
             else:
                 indexes.append(item['index'])

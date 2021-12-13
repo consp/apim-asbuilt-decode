@@ -70,7 +70,7 @@ class QtApp(object):
         if self.selected_file is not None:
             try:
                 self.asbuilt = AsBuilt(self.selected_file)
-                self.encoder = ItemEncoder()
+                self.encoder = ItemEncoder(self.asbuilt)
                 self.launch_picker()
             except ValueError as e:
                 QMessageBox.critical(self.current_window, "Error opening file", str(e))
@@ -144,8 +144,12 @@ class QtApp(object):
         self.button_save_as.clicked.connect(self.save_file_as)
         self.button_save.clicked.connect(self.save)
         self.syncversion = QComboBox()
-        self.syncversion.addItems(["3.0-3.2", "3.4"])
-        self.syncversion.setCurrentIndex(1)
+        if self.asbuilt.s4:
+            self.syncversion.addItems(["4"])
+            self.syncversion.setEnabled(False)
+        else:
+            self.syncversion.addItems(["3.0-3.2", "3.4"])
+            self.syncversion.setCurrentIndex(1)
 
         self.button_group_layout.addWidget(self.button_open)
         self.button_group_layout.addWidget(self.button_save)
@@ -317,7 +321,7 @@ if __name__ == "__main__":
 
         if not args.noprint:
             try:
-                print(ItemEncoder().format_all(asbuilt1, asbuilt2))
+                print(ItemEncoder(asbuilt1).format_all(asbuilt1, asbuilt2))
             except Exception as e:
                 print(asbuilt1.filename, asbuilt1.blocks)
                 raise

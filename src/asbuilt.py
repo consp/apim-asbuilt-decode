@@ -4,9 +4,13 @@ import xml.etree.ElementTree as ET
 import struct
 
 class AsBuilt(object):
-    fieldsizes = [10, 12, 5, 7, 6, 1, 16, 10, 20]
+    fieldsizes_s3 = [10, 12, 5, 7, 6, 1, 16, 10, 20, 20]
+    fieldsizes_s4 = [20, 15, 15, 5, 15, 6, 16, 10, 25, 25]
     blocks = [] # 3.2 and up and later 3.0 models have 8, 9 for 3.4 from late 2019 and my20
     filename = ""
+
+    s4 = False
+    fieldsizes = None
 
     def __init__(self, filename):
         bits = ""
@@ -52,8 +56,25 @@ class AsBuilt(object):
         else:
             raise ValueError("File type not supported")
         self.filename = filename
+        # detect actual length
+        length = len(unhexlify(bits.encode()))
+        for i in range(0, len(self.fieldsizes_s3)+1):
+            s4 = sum(self.fieldsizes_s3[0:i])
+            if s4 ==  length:
+                self.s4 = False
+                self.fieldsizes = self.fieldsizes_s3
+
+        for i in range(0, len(self.fieldsizes_s4)+1):
+            s4 = sum(self.fieldsizes_s4[0:i])
+            if s4 == length:
+                self.s4 = True
+                self.fieldsizes = self.fieldsizes_s4
         self.decode_bytes(unhexlify(bits.encode()))
         print("Loaded %d blocks, %d bytes" % (len(self.blocks), len(bytes(self))))
+        if self.s4:
+            print("Device is Sync 4")
+        else:
+            print("Device is Sync 3")
 
 
     def decode_bytes(self, data):
@@ -63,13 +84,21 @@ class AsBuilt(object):
 
         while len(data) > 0:
             try:
-                self.blocks.append(data[:self.fieldsizes[i]])
-                data = data[self.fieldsizes[i]:]
+                if self.s4:
+                    self.blocks.append(data[:self.fieldsizes_s4[i]])
+                    data = data[self.fieldsizes_s4[i]:]
+                else:
+                    self.blocks.append(data[:self.fieldsizes_s4[i]])
+                    data = data[self.fieldsizes[i]:]
                 i += 1
             except:
                 print(len(data))
+                print(hexlify(data).decode())
                 print(i)
-                print(self.fieldsizes[i])
+                if self.s4:
+                    print(self.fieldsizes_s4[i])
+                else:
+                    print(self.fieldsizes[i])
 
     def checksum(self, major, minor):
         return (0x07 + 0xD0 + major + minor + sum(self.blocks[major - 1][(minor-1) * 5:minor * 5])) & 0x00FF
