@@ -1,37 +1,35 @@
 # Ford APIM AsBuilt decoder tool
 ## Current state
-Latest "Stable" release version: [1.2](https://github.com/consp/apim-asbuilt-decode/releases)
+Latest "Stable" release version: [1.3](https://github.com/consp/apim-asbuilt-decode/releases)
 ## Intro
 This repository is meant for users who want to edit their values of the AsBuilt data of the Ford Sync 3 APIM and do not have a tool which has all information built in. The data has been collected from code (extracting debug information from the QNX applications) and other peoples findings on fora.
 
-There are in total 134 "standard" options in 7D0-01 to 7D0-04 (DE00-03). There are more options in 7D0-05 to 07 (DE04-06) which are mostly offset/multiplier values.
+Please note that some settings change quite a lot. Most radio and CGEA/C1MCA settings change quite a lot internally.
 
-Please note that some settings change quite a lot. Most radio and CGEA/C1MCA settings change quite a lot internally. There are at least 177 calibration options in the 3.0 release of Sync 3 and 295 in Sync 3.4.
-
-As with all DIY tools: YMMV and you do everything at your own risk.
+As with all DIY tools: YMMV and you do everything at your own risk. Changing stuff might brick your APIM, you have been warned!
 
 ## Acknowledgements
-
-Not all Gen4 stuff works on my module as the car it is in does not support it. I got most of the info from DE07/08 (7D0-08/09) from code but information was missing, like detailed names and some exact bit locations especially for 7D0-08. The data was corrected by the F150 ASBuilt sheet from the F150Forums which confirmed the data present in code. I'm not completely sure who is/are the author(s), leave a pull request if you want to add you name here. The code from the 3.4 update floating around on the intenet contains a lot of the 08/09 block options and I used those to verify most options.
+- F150 Forum for information about Sync 3.x which was not in the code.
+- CyanLabs for the Sync 4 config sheet
 
 
 ## Inconsistencies and known issues
-
-- The bluetooth audio profile does something but I have no clue what
-- After opening some files or misformed file the application might crash
+- After opening some files or misformed file the application might crash, this has been mostly mitigated
 
 ## Features
 - Dumps your abt binary data into something 'somewhat' readable
 - Lets you compare files to figure out you prefered configuration
 - Uses GUI to change options more easy and lets you see the results in the files if you change them.
+- Being an offline tool so you can use it while doing stuff in your garage.
 
 ## Todo
-- Add newer options as soon as they are found
+- Finish Sync 4 support by adding 7D0-08/09/10
 
 ## Usage and requirements
 Requires the following:
 - Python 3.5 and up
-- Qt5 libraries and PyQt5. x64 windows executables have everything built in, 32bit require meddeling with pyqt5.
+- Qt5 libraries and PyQt5.
+- Or: download the x64 windows executables which have everything built in, 32bit require meddeling with pyqt5 if you are unlucky.
 - As built file(s) in either Ford XML format (.ab) or ForScan dump format (.abt) in new or old style or a UCDS xml file.
 
 GUI: ```python3 src/apim.py``` or run the excutable. You can open a file, change stuff and save it
