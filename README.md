@@ -9,8 +9,8 @@ Please note that some settings change quite a lot. Most radio and CGEA/C1MCA set
 As with all DIY tools: YMMV and you do everything at your own risk. Changing stuff might brick your APIM, you have been warned!
 
 ## Acknowledgements
-- F150 Forum for information about Sync 3.x which was not in the code.
-- CyanLabs for the Sync 4 config sheet
+- F150Forum's Livinitup and F150chief for the Sync ASBuild sheet and  information about Sync 3.x which was not in the code.
+- CyanLabs/F150Forum members for the Sync 4 config sheet
 
 
 ## Inconsistencies and known issues
