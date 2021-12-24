@@ -1,4 +1,4 @@
-# Ford APIM AsBuilt decoder tool
+# Ford APIM Sync 3/4 AsBuilt decoder tool
 ## Current state
 Latest "Stable" release version: [1.3](https://github.com/consp/apim-asbuilt-decode/releases)
 ## Intro
