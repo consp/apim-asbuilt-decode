@@ -4,11 +4,13 @@ import xml.etree.ElementTree as ET
 import struct
 
 class AsBuilt(object):
+    fieldsizes_s1 = [8, 6, 5]
     fieldsizes_s3 = [10, 12, 5, 7, 6, 1, 16, 10, 20, 20]
     fieldsizes_s4 = [20, 15, 15, 5, 15, 6, 16, 10, 25, 25]
     blocks = [] # 3.2 and up and later 3.0 models have 8, 9 for 3.4 from late 2019 and my20
     filename = ""
 
+    sync_version = 0
     s4 = False
     fieldsizes = None
 
@@ -58,23 +60,31 @@ class AsBuilt(object):
         self.filename = filename
         # detect actual length
         length = len(unhexlify(bits.encode()))
-        for i in range(0, len(self.fieldsizes_s3)+1):
-            s4 = sum(self.fieldsizes_s3[0:i])
-            if s4 ==  length:
-                self.s4 = False
-                self.fieldsizes = self.fieldsizes_s3
-
-        for i in range(0, len(self.fieldsizes_s4)+1):
-            s4 = sum(self.fieldsizes_s4[0:i])
-            if s4 == length:
-                self.s4 = True
-                self.fieldsizes = self.fieldsizes_s4
-        self.decode_bytes(unhexlify(bits.encode()))
-        print("Loaded %d blocks, %d bytes" % (len(self.blocks), len(bytes(self))))
-        if self.s4:
-            print("Device is Sync 4")
+        # detect s4
+        s1_len = [sum(self.fieldsizes_s1[0:i]) for i in range(1, len(self.fieldsizes_s1) + 1)]
+        s3_len = [sum(self.fieldsizes_s3[0:i]) for i in range(1, len(self.fieldsizes_s3) + 1)]
+        s4_len = [sum(self.fieldsizes_s4[0:i]) for i in range(1, len(self.fieldsizes_s4) + 1)]
+        if length in s1_len and length not in s3_len and length not in s4_len:
+            self.s4 = False
+            self.fieldsizes = self.fieldsizes_s1
+            self.sync_version = 1
+        elif length in s3_len and length not in s1_len and length not in s4_len:
+            self.s4 = False
+            self.fieldsizes = self.fieldsizes_s3
+            self.sync_version = 3
+        elif length in s4_len and length not in s1_len and length not in s4_len:
+            self.s4 = True
+            self.fieldsizes = self.fieldsizes_s4
+            self.sync_version = 4
         else:
-            print("Device is Sync 3")
+            print("Unknown sync version or block count: %d bytes detected" % length)
+
+        print("Device is Sync %d" % self.sync_version)
+        if self.sync_version < 3:
+            print("Sync %d is unfortunately not supported" % self.sync_version)
+        else:
+            self.decode_bytes(unhexlify(bits.encode()))
+            print("Loaded %d blocks, %d bytes" % (len(self.blocks), len(bytes(self))))
 
 
     def decode_bytes(self, data):
