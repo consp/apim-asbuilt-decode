@@ -120,7 +120,7 @@ class AsBuilt(object):
             # 7D0G5G1169B1674263E
             string = string + "; Block %d \n" % (x)
             for z in range(0, len(self.blocks[x - 1]),5):
-                string = string + "7D0G%dG%d" % (x, (z // 5) + 1)
+                string = string + "7D0G%1XG%1X" % (x, (z // 5) + 1)
                 for d in self.blocks[x - 1][z:z+5]:
                     string = string + "%02X" % (d)
                 string = string + "%02X" % (self.checksum(x, (z // 5) + 1)) + "\n"
