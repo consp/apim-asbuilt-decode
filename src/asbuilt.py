@@ -64,6 +64,7 @@ class AsBuilt(object):
         s1_len = [sum(self.fieldsizes_s1[0:i]) for i in range(1, len(self.fieldsizes_s1) + 1)]
         s3_len = [sum(self.fieldsizes_s3[0:i]) for i in range(1, len(self.fieldsizes_s3) + 1)]
         s4_len = [sum(self.fieldsizes_s4[0:i]) for i in range(1, len(self.fieldsizes_s4) + 1)]
+        print(s4_len)
         if length in s1_len and length not in s3_len and length not in s4_len:
             self.s4 = False
             self.fieldsizes = self.fieldsizes_s1
@@ -72,7 +73,7 @@ class AsBuilt(object):
             self.s4 = False
             self.fieldsizes = self.fieldsizes_s3
             self.sync_version = 3
-        elif length in s4_len and length not in s1_len and length not in s4_len:
+        elif length in s4_len and length not in s1_len and length not in s3_len:
             self.s4 = True
             self.fieldsizes = self.fieldsizes_s4
             self.sync_version = 4
