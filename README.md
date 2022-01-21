@@ -1,12 +1,17 @@
 # Ford APIM Sync 3/4 AsBuilt decoder tool
 ## Current state
 Latest "Stable" release version: [1.3](https://github.com/consp/apim-asbuilt-decode/releases)
+
+### Supported Sync systems
+This version is meant for Sync 3 (all 1.0 to 3.0 versions and 3.2/3.3/3.4) systems, some options for Sync 4 are present but this is a work in progress. Some settings for Sync 3 are the same as for Sync 2 but this is not supported and it's recommended to look around for more information. The settings for Sync 1 and 1.1 systems are different, do not assume compatability with those.
+
 ## Intro
 This repository is meant for users who want to edit their values of the AsBuilt data of the Ford Sync 3 APIM and do not have a tool which has all information built in. The data has been collected from code (extracting debug information from the QNX applications) and other peoples findings on fora.
 
 Please note that some settings change quite a lot. Most radio and CGEA/C1MCA settings change quite a lot internally.
 
 As with all DIY tools: YMMV and you do everything at your own risk. Changing stuff might brick your APIM, you have been warned!
+
 
 ## Acknowledgements
 - F150Forum's Livinitup and F150chief for the Sync 3 ASBuild sheet and information about Sync 3.x which was not present in the source code (or at least not obvious).
