@@ -510,9 +510,9 @@ class ItemEncoder(object):
                 #print(bitfields)
                 try:
                     option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
-                except:
+                except Exception as e:
                     print("out of range", item)
-                    
+
 
             elif item['type'] == 'ascii':
                 option = QLineEdit()
@@ -528,9 +528,9 @@ class ItemEncoder(object):
                 option.setCurrentIndex(value)
                 try:
                     option.currentIndexChanged.connect(partial(combo_change, option, item, bitfields[item['byte']]))
-                except:
+                except Exception as e:
                     print("out of range", item)
-                    
+
             if 'theme' in item:
                 option.currentIndexChanged.connect(partial(themechange))
             layout.addWidget(label)

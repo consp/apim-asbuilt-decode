@@ -288,7 +288,7 @@ class JumpTables(object):
     BAPI = [ # Bluetooth audi profile index
             "Profile %d"
             ]
-            
+
     _BAPI = [
             "Profile 1",
             "U502 - Ford Explorer (Ext Amp)",
@@ -1876,12 +1876,11 @@ class Fields(object):
             'bit': 0,
             'size': 4,
             'type': 'mul',
-            'table': '__AP',
             'offset': 0,
             'multiplier': 1,
             'unit': 'seconds',
             'min': 0,
-            'max': 255,
+            'max': 64,
         },
         {
             'name': 'Audio Player (this setting might have additional options starting 3.2)',
@@ -5183,7 +5182,7 @@ class Fields_s4(object):
             '0': 'Disabled',
             '1': 'Enabled',
         },
-        
+
         {
             'name': 'Advanced HUD',
             'index': 69,
@@ -5360,7 +5359,7 @@ class Fields_s4(object):
             '0': 'Disabled',
             '1': 'Enabled',
         },
-        
+
         {
             'name': 'Number of Bladders Continued',
             'index': 69,
@@ -6196,7 +6195,7 @@ class Fields_s4(object):
             'type': 'table',
             'table': 'BVNI',
         },
-        {   
+        {
             'name': 'LIN 11-X',
             'index': 225,
             'byte': 9,
